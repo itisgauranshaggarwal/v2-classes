@@ -12,7 +12,11 @@ function load(): ContentState {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaultContent;
     const parsed = JSON.parse(raw) as Partial<ContentState>;
-    return { ...defaultContent, ...parsed, site: { ...defaultContent.site, ...(parsed.site ?? {}) } };
+    return {
+      ...defaultContent,
+      ...parsed,
+      site: { ...defaultContent.site, ...(parsed.site ?? {}) },
+    };
   } catch {
     return defaultContent;
   }
@@ -29,16 +33,30 @@ const ContentContext = createContext<Ctx | null>(null);
 export function ContentProvider({ children }: { children: ReactNode }) {
   const [content, setContent] = useState<ContentState>(defaultContent);
   const [ready, setReady] = useState(false);
-  useEffect(() => { setContent(load()); setReady(true); }, []);
+  useEffect(() => {
+    setContent(load());
+    setReady(true);
+  }, []);
   const update = useCallback((fn: (c: ContentState) => ContentState) => {
     setContent((prev) => {
       const next = fn(prev);
-      try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* quota exceeded */ }
+      try {
+        localStorage.setItem(KEY, JSON.stringify(next));
+      } catch {
+        /* quota exceeded */
+      }
       return next;
     });
   }, []);
-  const reset = useCallback(() => { localStorage.removeItem(KEY); setContent(defaultContent); }, []);
-  return <ContentContext.Provider value={{ content, update, reset, ready }}>{children}</ContentContext.Provider>;
+  const reset = useCallback(() => {
+    localStorage.removeItem(KEY);
+    setContent(defaultContent);
+  }, []);
+  return (
+    <ContentContext.Provider value={{ content, update, reset, ready }}>
+      {children}
+    </ContentContext.Provider>
+  );
 }
 
 export function useContent() {

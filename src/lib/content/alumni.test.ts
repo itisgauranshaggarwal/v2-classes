@@ -2,7 +2,19 @@ import { describe, expect, it } from "vitest";
 import { achievementStats, filterAchievements } from "./alumni";
 import type { Achievement } from "./types";
 
-const base: Achievement = { id: "1", studentName: "Asha", photo: "", exam: "NEET", category: "neet", result: "", institution: "", year: "", featured: false, status: "published", isSample: false };
+const base: Achievement = {
+  id: "1",
+  studentName: "Asha",
+  photo: "",
+  exam: "NEET",
+  category: "neet",
+  result: "",
+  institution: "",
+  year: "",
+  featured: false,
+  status: "published",
+  isSample: false,
+};
 
 describe("alumni rules", () => {
   it("hides statistics when only sample entries exist", () => {

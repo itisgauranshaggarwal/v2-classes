@@ -7,7 +7,11 @@ export const CATEGORY_LABELS: Record<ExamCategory, string> = {
   other: "Other Achievements",
 };
 
-export function filterAchievements(list: Achievement[], query: string, category: ExamCategory | "all") {
+export function filterAchievements(
+  list: Achievement[],
+  query: string,
+  category: ExamCategory | "all",
+) {
   const q = query.trim().toLowerCase();
   return list
     .filter((a) => a.status === "published")

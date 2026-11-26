@@ -47,7 +47,12 @@ export interface Enquiry {
   status: "new" | "contacted" | "closed";
 }
 
-export interface MediaItem { id: string; name: string; url: string; addedAt: string; }
+export interface MediaItem {
+  id: string;
+  name: string;
+  url: string;
+  addedAt: string;
+}
 
 export interface SiteContent {
   home: {
@@ -70,8 +75,21 @@ export interface SiteContent {
     growth: string;
     values: { title: string; body: string }[];
   };
-  walkthrough: { title: string; videoUrl: string; poster: string; isPlaceholder: boolean; caption: string };
-  contact: { address: string; phone: string; whatsapp: string; email: string; mapQuery: string; hours: string };
+  walkthrough: {
+    title: string;
+    videoUrl: string;
+    poster: string;
+    isPlaceholder: boolean;
+    caption: string;
+  };
+  contact: {
+    address: string;
+    phone: string;
+    whatsapp: string;
+    email: string;
+    mapQuery: string;
+    hours: string;
+  };
   social: { instagram: string; facebook: string; youtube: string };
   settings: { siteName: string; tagline: string; footerText: string; marqueeSpeed: number };
 }
