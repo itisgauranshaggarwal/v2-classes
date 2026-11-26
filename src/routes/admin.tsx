@@ -20,6 +20,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Logo } from "@/components/site/Logo";
 import { Wordmark } from "@/components/site/Wordmark";
 import * as S from "@/components/admin/sections";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -86,21 +88,77 @@ const SECTIONS = [
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"];
 
-const SESSION = "v2-admin-demo-session";
+const DEMO_SESSION = "v2-admin-demo-session";
+
+async function checkAdminAccess() {
+  if (!hasSupabaseEnv())
+    return { ok: Boolean(sessionStorage.getItem(DEMO_SESSION)), mode: "demo" as const };
+  const supabase = getSupabaseBrowserClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user) return { ok: false, mode: "supabase" as const };
+  const { data, error } = await supabase
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", session.user.id)
+    .maybeSingle();
+  if (error) console.error("Admin check failed:", error);
+  return { ok: Boolean(data), mode: "supabase" as const };
+}
 
 function Login({ onLogin }: { onLogin: () => void }) {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
-  const submit = (e: FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const supabaseMode = hasSupabaseEnv();
+
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email || !pw) {
       setErr("Enter an email and password.");
       return;
     }
-    sessionStorage.setItem(SESSION, email);
-    onLogin();
+    setErr("");
+    setLoading(true);
+    try {
+      if (!supabaseMode) {
+        sessionStorage.setItem(DEMO_SESSION, email);
+        onLogin();
+        return;
+      }
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
+      if (error) {
+        setErr(error.message);
+        return;
+      }
+      const userId = data.user?.id;
+      if (!userId) {
+        setErr("Could not sign in.");
+        return;
+      }
+      const { data: adminRow, error: adminErr } = await supabase
+        .from("admin_users")
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (adminErr) {
+        setErr("Could not verify admin access. Check Supabase setup and RLS policies.");
+        return;
+      }
+      if (!adminRow) {
+        await supabase.auth.signOut();
+        setErr("This account is not authorized for admin access.");
+        return;
+      }
+      onLogin();
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
     <div className="grid min-h-screen bg-ink lg:grid-cols-2">
       <div className="hidden flex-col justify-between p-12 text-primary-foreground lg:flex">
@@ -121,7 +179,9 @@ function Login({ onLogin }: { onLogin: () => void }) {
           </div>
           <div className="flex gap-3 rounded-xl border border-dashed border-brand/50 bg-brand-soft p-3 text-xs text-brand-deep">
             <ShieldAlert className="h-4 w-4 shrink-0" />
-            Demo login: any email and password work. Real authentication isn't connected yet.
+            {supabaseMode
+              ? "Sign in with your Supabase admin account. The account must exist in the admin_users table."
+              : "Demo login: Supabase env vars are not configured. Any email and password work in local demo mode."}
           </div>
           <label className="block">
             <span className="text-sm font-semibold">Email</span>
@@ -142,7 +202,12 @@ function Login({ onLogin }: { onLogin: () => void }) {
             />
           </label>
           {err && <p className="text-sm text-destructive">{err}</p>}
-          <button className="btn-brand w-full justify-center">Sign in</button>
+          <button
+            disabled={loading}
+            className="btn-brand w-full justify-center disabled:opacity-70"
+          >
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
           <Link
             to="/"
             className="block text-center text-sm text-muted-foreground hover:text-foreground"
@@ -159,7 +224,15 @@ function Admin() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [section, setSection] = useState<SectionId>("overview");
   const [navOpen, setNavOpen] = useState(false);
-  useEffect(() => setAuthed(!!sessionStorage.getItem(SESSION)), []);
+  useEffect(() => {
+    let cancelled = false;
+    void checkAdminAccess().then((res) => {
+      if (!cancelled) setAuthed(res.ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   if (authed === null)
     return (
       <div className="grid min-h-screen place-items-center text-sm text-muted-foreground">
@@ -209,7 +282,8 @@ function Admin() {
           </a>
           <button
             onClick={() => {
-              sessionStorage.removeItem(SESSION);
+              sessionStorage.removeItem(DEMO_SESSION);
+              if (hasSupabaseEnv()) void getSupabaseBrowserClient().auth.signOut();
               setAuthed(false);
             }}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent"
@@ -228,8 +302,9 @@ function Admin() {
       )}
       <div className="min-w-0 flex-1">
         <div className="border-b border-brand/20 bg-brand-soft px-6 py-2 text-center text-xs font-medium text-brand-deep">
-          Demo mode — changes are saved in this browser only. Database, sign-in and email aren't
-          connected yet.
+          {hasSupabaseEnv()
+            ? "Connected to Supabase — content changes are saved to the database."
+            : "Demo mode — changes are saved in this browser only. Database, sign-in and email aren't connected yet."}
         </div>
         <header className="sticky top-0 z-20 flex items-center gap-4 border-b border-border bg-background/90 px-6 py-5 backdrop-blur lg:px-10">
           <button

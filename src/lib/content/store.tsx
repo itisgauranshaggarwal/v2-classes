@@ -1,13 +1,26 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { defaultContent } from "./defaults";
-import type { ContentState } from "./types";
+import type {
+  Achievement,
+  ContentState,
+  Enquiry,
+  FacultyMember,
+  MediaItem,
+  SiteContent,
+  TimelineItem,
+} from "./types";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 
 /**
- * Demo content repository: browser localStorage only.
- * Swap `load`/`save` for database calls when the backend is connected; consumers use `useContent()` unchanged.
+ * Content repository.
+ * - If Supabase env vars are present: reads/writes Supabase (source of truth).
+ * - Otherwise: falls back to local defaults/localStorage demo mode for local development.
+ * Consumers use `useContent()` unchanged.
  */
 const KEY = "v2-content-v1";
-function load(): ContentState {
+
+function loadLocal(): ContentState {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaultContent;
@@ -22,38 +35,342 @@ function load(): ContentState {
   }
 }
 
+function saveLocal(content: ContentState) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(content));
+  } catch {
+    /* quota exceeded */
+  }
+}
+
+type Row = Record<string, unknown>;
+
+function mapFaculty(row: Row): FacultyMember {
+  return {
+    id: String(row["id"] ?? ""),
+    name: String(row["name"] ?? ""),
+    role: String(row["role"] ?? ""),
+    focus: String(row["focus"] ?? ""),
+    shortBio: String(row["short_bio"] ?? ""),
+    longBio: String(row["long_bio"] ?? ""),
+    photo: String(row["photo"] ?? ""),
+    order: Number(row["sort_order"] ?? 0),
+    status: row["status"] === "draft" ? "draft" : "published",
+  };
+}
+
+function mapAchievement(row: Row): Achievement {
+  const category = row["category"];
+  return {
+    id: String(row["id"] ?? ""),
+    studentName: String(row["student_name"] ?? ""),
+    photo: String(row["photo"] ?? ""),
+    exam: String(row["exam"] ?? ""),
+    category:
+      category === "iit-jee" || category === "neet" || category === "boards" || category === "other"
+        ? category
+        : "other",
+    result: String(row["result"] ?? ""),
+    institution: String(row["institution"] ?? ""),
+    year: String(row["year"] ?? ""),
+    featured: Boolean(row["featured"]),
+    status: row["status"] === "draft" ? "draft" : "published",
+    isSample: Boolean(row["is_sample"]),
+  };
+}
+
+function mapTimeline(row: Row): TimelineItem {
+  return {
+    id: String(row["id"] ?? ""),
+    year: String(row["year"] ?? ""),
+    title: String(row["title"] ?? ""),
+    description: String(row["description"] ?? ""),
+    isPlaceholder: Boolean(row["is_placeholder"]),
+    status: row["status"] === "draft" ? "draft" : "published",
+  };
+}
+
+function mapEnquiry(row: Row): Enquiry {
+  const status = row["status"];
+  return {
+    id: String(row["id"] ?? ""),
+    name: String(row["name"] ?? ""),
+    phone: String(row["phone"] ?? ""),
+    email: String(row["email"] ?? ""),
+    message: String(row["message"] ?? ""),
+    createdAt: String(row["created_at"] ?? new Date().toISOString()),
+    status: status === "contacted" || status === "closed" ? status : "new",
+  };
+}
+
+function mapMedia(row: Row): MediaItem {
+  return {
+    id: String(row["id"] ?? ""),
+    name: String(row["name"] ?? ""),
+    url: String(row["url"] ?? ""),
+    addedAt: String(row["added_at"] ?? new Date().toISOString().slice(0, 10)),
+  };
+}
+
+function mapSite(row: Row): SiteContent {
+  const site = defaultContent.site;
+  return {
+    home: { ...site.home, ...((row["home"] as object) ?? {}) },
+    about: { ...site.about, ...((row["about"] as object) ?? {}) },
+    walkthrough: { ...site.walkthrough, ...((row["walkthrough"] as object) ?? {}) },
+    contact: { ...site.contact, ...((row["contact"] as object) ?? {}) },
+    social: { ...site.social, ...((row["social"] as object) ?? {}) },
+    settings: { ...site.settings, ...((row["settings"] as object) ?? {}) },
+  };
+}
+
+async function loadFromSupabase(): Promise<ContentState> {
+  const supabase = getSupabaseBrowserClient();
+  const [siteRes, facultyRes, achievementsRes, timelineRes, enquiriesRes, mediaRes] =
+    await Promise.all([
+      supabase.from("site_content").select("*").eq("id", "default").maybeSingle(),
+      supabase.from("faculty").select("*").order("sort_order", { ascending: true }),
+      supabase.from("achievements").select("*").order("created_at", { ascending: false }),
+      supabase
+        .from("timeline")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true }),
+      supabase.from("enquiries").select("*").order("created_at", { ascending: false }),
+      supabase.from("media").select("*").order("created_at", { ascending: false }),
+    ]);
+
+  const errors = [
+    siteRes.error,
+    facultyRes.error,
+    achievementsRes.error,
+    timelineRes.error,
+    enquiriesRes.error,
+    mediaRes.error,
+  ].filter(Boolean);
+  if (errors.length) {
+    console.error("Supabase content load errors:", errors);
+  }
+
+  return {
+    site: siteRes.data ? mapSite(siteRes.data) : defaultContent.site,
+    faculty: (facultyRes.data ?? []).map(mapFaculty),
+    achievements: (achievementsRes.data ?? []).map(mapAchievement),
+    timeline: (timelineRes.data ?? []).map(mapTimeline),
+    enquiries: (enquiriesRes.data ?? []).map(mapEnquiry),
+    media: (mediaRes.data ?? []).map(mapMedia),
+  };
+}
+
+async function persistSite(site: SiteContent) {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.from("site_content").upsert({ id: "default", ...site });
+  if (error) console.error("Failed to save site content:", error);
+}
+
+async function persistFaculty(prev: FacultyMember[], next: FacultyMember[]) {
+  const supabase = getSupabaseBrowserClient();
+  const prevIds = new Set(prev.map((f) => f.id));
+  const nextIds = new Set(next.map((f) => f.id));
+  const removed = prev.filter((f) => !nextIds.has(f.id)).map((f) => f.id);
+  if (removed.length) {
+    const { error } = await supabase.from("faculty").delete().in("id", removed);
+    if (error) console.error("Failed to delete faculty:", error);
+  }
+  if (next.length) {
+    const rows = next.map((f) => ({
+      id: f.id,
+      name: f.name,
+      role: f.role,
+      focus: f.focus,
+      short_bio: f.shortBio,
+      long_bio: f.longBio,
+      photo: f.photo,
+      sort_order: f.order,
+      status: f.status,
+    }));
+    const { error } = await supabase.from("faculty").upsert(rows);
+    if (error) console.error("Failed to save faculty:", error);
+  } else if (prevIds.size) {
+    // all removed already handled
+  }
+}
+
+async function persistAchievements(prev: Achievement[], next: Achievement[]) {
+  const supabase = getSupabaseBrowserClient();
+  const nextIds = new Set(next.map((a) => a.id));
+  const removed = prev.filter((a) => !nextIds.has(a.id)).map((a) => a.id);
+  if (removed.length) {
+    const { error } = await supabase.from("achievements").delete().in("id", removed);
+    if (error) console.error("Failed to delete achievements:", error);
+  }
+  if (next.length) {
+    const rows = next.map((a) => ({
+      id: a.id,
+      student_name: a.studentName,
+      photo: a.photo,
+      exam: a.exam,
+      category: a.category,
+      result: a.result,
+      institution: a.institution,
+      year: a.year,
+      featured: a.featured,
+      status: a.status,
+      is_sample: a.isSample,
+    }));
+    const { error } = await supabase.from("achievements").upsert(rows);
+    if (error) console.error("Failed to save achievements:", error);
+  }
+}
+
+async function persistTimeline(prev: TimelineItem[], next: TimelineItem[]) {
+  const supabase = getSupabaseBrowserClient();
+  const nextIds = new Set(next.map((t) => t.id));
+  const removed = prev.filter((t) => !nextIds.has(t.id)).map((t) => t.id);
+  if (removed.length) {
+    const { error } = await supabase.from("timeline").delete().in("id", removed);
+    if (error) console.error("Failed to delete timeline:", error);
+  }
+  if (next.length) {
+    const rows = next.map((t, i) => ({
+      id: t.id,
+      year: t.year,
+      title: t.title,
+      description: t.description,
+      is_placeholder: t.isPlaceholder,
+      status: t.status,
+      sort_order: i,
+    }));
+    const { error } = await supabase.from("timeline").upsert(rows);
+    if (error) console.error("Failed to save timeline:", error);
+  }
+}
+
+async function persistEnquiries(prev: Enquiry[], next: Enquiry[]) {
+  const supabase = getSupabaseBrowserClient();
+  const nextIds = new Set(next.map((e) => e.id));
+  const removed = prev.filter((e) => !nextIds.has(e.id)).map((e) => e.id);
+  if (removed.length) {
+    const { error } = await supabase.from("enquiries").delete().in("id", removed);
+    if (error) console.error("Failed to delete enquiries:", error);
+  }
+  if (next.length) {
+    const rows = next.map((e) => ({
+      id: e.id,
+      name: e.name,
+      phone: e.phone,
+      email: e.email,
+      message: e.message,
+      created_at: e.createdAt,
+      status: e.status,
+    }));
+    const { error } = await supabase.from("enquiries").upsert(rows);
+    if (error) console.error("Failed to save enquiries:", error);
+  }
+}
+
+async function persistMedia(prev: MediaItem[], next: MediaItem[]) {
+  const supabase = getSupabaseBrowserClient();
+  const nextIds = new Set(next.map((m) => m.id));
+  const removed = prev.filter((m) => !nextIds.has(m.id)).map((m) => m.id);
+  if (removed.length) {
+    const { error } = await supabase.from("media").delete().in("id", removed);
+    if (error) console.error("Failed to delete media:", error);
+  }
+  if (next.length) {
+    const rows = next.map((m) => ({ id: m.id, name: m.name, url: m.url, added_at: m.addedAt }));
+    const { error } = await supabase.from("media").upsert(rows);
+    if (error) console.error("Failed to save media:", error);
+  }
+}
+
+async function persistDiff(prev: ContentState, next: ContentState) {
+  const supabase = getSupabaseBrowserClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const isAuthed = Boolean(session);
+
+  const tasks: Promise<void>[] = [];
+  if (prev.site !== next.site && isAuthed) tasks.push(persistSite(next.site));
+  if (prev.faculty !== next.faculty && isAuthed)
+    tasks.push(persistFaculty(prev.faculty, next.faculty));
+  if (prev.achievements !== next.achievements && isAuthed)
+    tasks.push(persistAchievements(prev.achievements, next.achievements));
+  if (prev.timeline !== next.timeline && isAuthed)
+    tasks.push(persistTimeline(prev.timeline, next.timeline));
+  if (prev.enquiries !== next.enquiries && isAuthed)
+    tasks.push(persistEnquiries(prev.enquiries, next.enquiries));
+  if (prev.media !== next.media && isAuthed) tasks.push(persistMedia(prev.media, next.media));
+  await Promise.all(tasks);
+}
+
 interface Ctx {
   content: ContentState;
   update: (fn: (c: ContentState) => ContentState) => void;
   reset: () => void;
   ready: boolean;
+  source: "supabase" | "local";
 }
 const ContentContext = createContext<Ctx | null>(null);
 
 export function ContentProvider({ children }: { children: ReactNode }) {
   const [content, setContent] = useState<ContentState>(defaultContent);
   const [ready, setReady] = useState(false);
+  const [source, setSource] = useState<"supabase" | "local">("local");
+
   useEffect(() => {
-    setContent(load());
-    setReady(true);
+    let cancelled = false;
+    async function load() {
+      if (hasSupabaseEnv()) {
+        try {
+          const loaded = await loadFromSupabase();
+          if (!cancelled) {
+            setContent(loaded);
+            setSource("supabase");
+            setReady(true);
+          }
+          return;
+        } catch (err) {
+          console.error("Supabase load failed, falling back to local defaults:", err);
+        }
+      }
+      if (!cancelled) {
+        setContent(loadLocal());
+        setSource("local");
+        setReady(true);
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
   const update = useCallback((fn: (c: ContentState) => ContentState) => {
     setContent((prev) => {
       const next = fn(prev);
-      try {
-        localStorage.setItem(KEY, JSON.stringify(next));
-      } catch {
-        /* quota exceeded */
+      if (hasSupabaseEnv()) {
+        void persistDiff(prev, next);
+      } else {
+        saveLocal(next);
       }
       return next;
     });
   }, []);
+
   const reset = useCallback(() => {
-    localStorage.removeItem(KEY);
-    setContent(defaultContent);
+    if (hasSupabaseEnv()) {
+      // In Supabase mode, reload defaults locally only; do not wipe database content.
+      setContent(defaultContent);
+    } else {
+      localStorage.removeItem(KEY);
+      setContent(defaultContent);
+    }
   }, []);
+
   return (
-    <ContentContext.Provider value={{ content, update, reset, ready }}>
+    <ContentContext.Provider value={{ content, update, reset, ready, source }}>
       {children}
     </ContentContext.Provider>
   );

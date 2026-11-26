@@ -6,7 +6,7 @@
 
 ## 1. Executive Summary
 
-The project is a TanStack Start + React 19 + TypeScript + Tailwind v4 website for V2 Classes. The approved UI was preserved. The primary issues were Lovable-specific tooling/dependencies, demo-only admin/content persistence, and missing professional local-dev/documentation files. This pass creates a Git backup, removes Lovable runtime/build dependencies, standardizes npm local development, and documents Cloudflare/Supabase next steps.
+The project is a TanStack Start + React 19 + TypeScript + Tailwind v4 website for V2 Classes. The approved UI was preserved. Lovable-specific tooling was removed, npm local development was standardized, and a Supabase foundation was integrated (Auth, Postgres schema/RLS, Storage bucket migration, content store, admin auth, enquiries). The app falls back to local demo mode when Supabase env vars are missing. Database-backed mode requires applying migrations in `supabase/migrations/` and adding an admin user to `public.admin_users`.
 
 ## 2. Architecture & Stack (Observed)
 
@@ -99,29 +99,39 @@ The project is a TanStack Start + React 19 + TypeScript + Tailwind v4 website fo
 - **Required checks before deploy**: SSR routes, server entry behavior, environment variable handling, static assets, and error handling in Cloudflare runtime.
 - **Do not deploy yet** until a version-compatible Cloudflare adapter/plugin and wrangler configuration are validated.
 
-## 6. Future Supabase Integration Plan
+## 6. Supabase Integration Status (2026-11-26)
 
-1. **Schema design**: map existing types (`SiteContent`, `FacultyMember`, `Achievement`, `TimelineItem`, `Enquiry`, `MediaItem`) to Postgres tables; preserve IDs/slugs/status fields where possible.
-2. **Auth/RBAC**: Supabase Auth for admins; admin role table/claims; remove demo sessionStorage login.
-3. **RLS**: public read for published content; admin-only write policies; enquiry insert policy for public form with rate limiting/server validation.
-4. **Storage**: bucket for faculty/alumni/media/walkthrough assets; store URLs/paths in DB; remove data URL persistence.
-5. **Content store migration**: replace localStorage load/save in `src/lib/content/store.tsx` with Supabase queries/mutations; keep `useContent()` API stable for UI.
-6. **Admin UX**: add real loading/error states, optimistic updates where safe, and audit timestamps.
-7. **Contact flow**: server-side enquiry submission, spam protection, notification email, admin enquiry management backed by DB.
+**Implemented (foundation):**
+
+- `supabase/migrations/` — initial schema/RLS + seed defaults + media storage bucket policies.
+- `src/lib/supabase/` — browser client, env helpers, storage upload helper.
+- `src/lib/content/store.tsx` — loads/persists content via Supabase when env vars are present; local demo fallback otherwise.
+- `src/routes/admin.tsx` — Supabase Auth sign-in with `admin_users` allowlist check; demo fallback only when env vars missing.
+- `src/lib/enquiries.ts` + `src/routes/contact.tsx` — public enquiry insert to Supabase; local demo fallback.
+- `src/components/admin/sections.tsx` — media uploads go to Supabase Storage when configured.
+
+**Still required before production use:**
+
+1. Apply migrations to the Supabase project (`supabase/migrations/*`).
+2. Create admin auth user(s) in Supabase Auth and insert into `public.admin_users`.
+3. Verify RLS/auth flows with real credentials and anon access checks.
+4. Add server-side rate limiting/spam protection and notification workflow for enquiries.
+5. Add server-side route protection/middleware for admin if stronger SSR gating is needed (RLS already protects data writes).
+6. Run browser smoke tests against a configured Supabase project.
 
 ## 7. Verification Status
 
 Executed in `v2-classes-official-website-main` on 2026-11-26 after `npm install`.
 
-| Check | Result | Notes |
-| --- | --- | --- |
-| `npm install` | **Passed** | npm reported 513 packages added, 0 vulnerabilities. `package-lock.json` generated. |
-| `npm run typecheck` | **Passed** | `tsc --noEmit` completed with no type errors. |
-| `npm run lint` | **Passed with warnings** | 0 errors, 10 pre-existing `react-refresh/only-export-components` warnings in UI/store files. |
-| `npm run test` | **Passed** | Vitest: 2 files passed, 4 tests passed. |
-| `npm run build` | **Passed** | Vite/Nitro production build completed; SSR/client outputs generated in `.output/`. |
-| `npm run dev` | **Not smoke-tested in browser automation** | Dev command not run as a persistent interactive session during this pass; build and tests passed. Manual local smoke test recommended. |
-| UI smoke test (browser) | **Not run** | No browser automation executed in this pass. Routes/components were statically inspected and build/tests passed. |
+| Check                   | Result                                     | Notes                                                                                                                                  |
+| ----------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm install`           | **Passed**                                 | npm reported 513 packages added, 0 vulnerabilities. `package-lock.json` generated.                                                     |
+| `npm run typecheck`     | **Passed**                                 | `tsc --noEmit` completed with no type errors.                                                                                          |
+| `npm run lint`          | **Passed with warnings**                   | 0 errors, 10 pre-existing `react-refresh/only-export-components` warnings in UI/store files.                                           |
+| `npm run test`          | **Passed**                                 | Vitest: 2 files passed, 4 tests passed.                                                                                                |
+| `npm run build`         | **Passed**                                 | Vite/Nitro production build completed; SSR/client outputs generated in `.output/`.                                                     |
+| `npm run dev`           | **Not smoke-tested in browser automation** | Dev command not run as a persistent interactive session during this pass; build and tests passed. Manual local smoke test recommended. |
+| UI smoke test (browser) | **Not run**                                | No browser automation executed in this pass. Routes/components were statically inspected and build/tests passed.                       |
 
 ## 8. Git Backup
 
@@ -132,9 +142,8 @@ Executed in `v2-classes-official-website-main` on 2026-11-26 after `npm install`
 
 ## 9. Remaining Issues / Manual Actions
 
-- **Admin auth is demo-only** (sessionStorage, any credentials). Must be replaced before production use.
-- **Content/enquiries/media are localStorage-only**. Not production persistence.
+- **Apply Supabase migrations** in `supabase/migrations/` to the target project; create an admin auth user and add to `public.admin_users`.
+- **Browser smoke test against real Supabase** not run in this pass; verify `/`, `/about`, `/alumni`, `/contact`, `/admin` after migration.
 - **Cloudflare deployment config not finalized**. Validate TanStack Start/Nitro/Cloudflare-compatible deployment path for pinned versions before deploying.
-- **Supabase not integrated**. Schema/Auth/RLS/Storage migration planned, not implemented.
-- **UI browser smoke test not run** in this automated pass; run `npm run dev` and verify `/`, `/about`, `/alumni`, `/contact`, `/admin` visually.
-- **Pre-existing lint warnings** in generated-style UI primitives/store exports can be cleaned up later if desired (non-blocking).
+- **Enquiry anti-spam/rate limiting** is minimal; add server-side protections/notifications before production.
+- **Pre-existing lint warnings** in UI primitives/store exports remain (non-blocking).

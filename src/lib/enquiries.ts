@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 
 export const enquirySchema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(100, "Name is too long"),
@@ -15,14 +17,29 @@ export const enquirySchema = z.object({
 });
 export type EnquiryInput = z.infer<typeof enquirySchema>;
 
-/**
- * PLACEHOLDER submission handler. Nothing is sent or stored on a server yet.
- * Replace with a server function that inserts into an `enquiries` table and sends an email notification.
- */
 export async function submitEnquiry(
   input: EnquiryInput,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  enquirySchema.parse(input);
+): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
+  const parsed = enquirySchema.parse(input);
+
+  if (hasSupabaseEnv()) {
+    const supabase = getSupabaseBrowserClient();
+    const id = Math.random().toString(36).slice(2, 10);
+    const { error } = await supabase.from("enquiries").insert({
+      id,
+      name: parsed.name,
+      phone: parsed.phone,
+      email: parsed.email,
+      message: parsed.message,
+      status: "new",
+    });
+    if (error) {
+      console.error("Failed to submit enquiry:", error);
+      return { ok: false, error: "Could not submit your enquiry. Please try again." };
+    }
+    return { ok: true, id };
+  }
+
   await new Promise((r) => setTimeout(r, 900));
   return { ok: true };
 }

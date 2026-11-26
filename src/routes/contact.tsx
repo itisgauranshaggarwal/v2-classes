@@ -55,11 +55,16 @@ function Contact() {
     try {
       const res = await submitEnquiry(parsed.data);
       if (!res.ok) throw new Error(res.error);
-      // Demo only: keep a local copy so it shows in the admin enquiries list.
+      // Keep local UI in sync; Supabase persistence is handled by submitEnquiry/persistDiff.
       update((s) => ({
         ...s,
         enquiries: [
-          { id: uid(), ...parsed.data, createdAt: new Date().toISOString(), status: "new" },
+          {
+            id: res.id ?? uid(),
+            ...parsed.data,
+            createdAt: new Date().toISOString(),
+            status: "new",
+          },
           ...s.enquiries,
         ],
       }));

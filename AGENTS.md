@@ -7,7 +7,7 @@ Instructions for future OpenCode agents working in this repository.
 - **Project**: V2 Classes official website (Sector 13, Hisar, Haryana, India).
 - **Stack**: TanStack Start + TanStack Router + React 19 + TypeScript + Vite 8 + Nitro + Tailwind CSS v4.
 - **Package manager**: npm.
-- **Current data layer**: localStorage demo content store (no Supabase integration yet).
+- **Data layer**: Supabase foundation integrated (Auth, Postgres, Storage, RLS) with local demo fallback when env vars are missing.
 - **Deployment target (planned)**: Cloudflare, using a TanStack Start SSR-compatible path.
 
 ## Non-Negotiable Rules
@@ -17,8 +17,8 @@ Instructions for future OpenCode agents working in this repository.
 3. **Do not claim verification you did not run**. Report passed/failed/not run clearly.
 4. **No secrets in git**. Never commit `.env`, `.dev.vars`, credentials, tokens, or service keys.
 5. **No force-push** and no destructive git history rewrites.
-6. **Supabase is not implemented yet**. Do not add fake production auth/db behavior; document and prepare interfaces instead.
-7. **Admin auth is currently demo-only**. Do not present it as secure production authentication.
+6. **Supabase is integrated but requires setup**. Migrations in `supabase/migrations/` must be applied; admin users must be added to `public.admin_users`. Do not claim production-ready until verified.
+7. **Preserve RLS and auth boundaries**. Public users can read published content/submit enquiries; admin writes require Supabase Auth + `admin_users` membership.
 
 ## Key Directories
 
@@ -61,16 +61,15 @@ Before finishing meaningful changes, run relevant checks:
 
 If a check cannot run, report why. If UI/routes are affected, smoke test key pages: `/`, `/about`, `/alumni`, `/contact`, `/admin`.
 
-## Supabase Future Integration Guidance
+## Supabase Integration Guidance
 
-When implementing Supabase later (separate phase):
+Supabase foundation is in place. When extending it:
 
-- Use Supabase Auth for real admin authentication; remove demo sessionStorage login.
-- Use Postgres tables aligned with existing content types in `src/lib/content/types.ts`.
-- Add RLS policies for public read/published content and authenticated admin writes.
-- Use Supabase Storage for media uploads; replace data URL/localStorage media handling.
-- Store enquiries in DB; send notifications via secure server-side function/edge workflow.
-- Keep public UI components consuming stable content interfaces; avoid UI rewrites.
+- Keep schema/RLS changes in `supabase/migrations/`; do not edit applied migrations, add new ones.
+- Use Supabase Auth for admin authentication; admin access is gated by `public.admin_users` and RLS.
+- Keep public UI components consuming stable `useContent()` interfaces; avoid UI rewrites.
+- Store media in Supabase Storage and persist metadata/URLs in DB.
+- Add server-side spam protection, notifications, and stronger admin route protection before production.
 
 ## Git Rules
 

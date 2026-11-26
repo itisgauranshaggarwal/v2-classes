@@ -22,14 +22,9 @@ import type {
 import { CATEGORY_LABELS } from "@/lib/content/alumni";
 import { CollectionManager } from "./CollectionManager";
 import { ObjectEditor } from "./ObjectEditor";
-import {
-  StatusBadge,
-  STATUS_OPTIONS,
-  Toggle,
-  readFileAsDataUrl,
-  FieldRow,
-  type FieldSpec,
-} from "./fields";
+import { StatusBadge, STATUS_OPTIONS, Toggle, FieldRow, type FieldSpec } from "./fields";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { uploadMediaFile } from "@/lib/supabase/storage";
 
 function useSite<K extends keyof SiteContent>(k: K) {
   const { content, update } = useContent();
@@ -406,14 +401,16 @@ export function SettingsEditor() {
         ]}
       />
       <div className="rounded-xl border border-destructive/30 bg-card p-6">
-        <h3 className="font-bold">Reset demo data</h3>
+        <h3 className="font-bold">{hasSupabaseEnv() ? "Reset local view" : "Reset demo data"}</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Restores all content to the original defaults in this browser.
+          {hasSupabaseEnv()
+            ? "Reloads default content in this browser view only. It does not delete Supabase data."
+            : "Restores all content to the original defaults in this browser."}
         </p>
         <button
           onClick={() => {
             reset();
-            toast.success("Demo data reset");
+            toast.success(hasSupabaseEnv() ? "Local view reset" : "Demo data reset");
           }}
           className="mt-4 inline-flex items-center gap-2 rounded-full border border-destructive px-4 py-2 text-sm font-semibold text-destructive"
         >
@@ -428,24 +425,31 @@ export function SettingsEditor() {
 export function MediaLibrary() {
   const { content, update } = useContent();
   const add = async (files: FileList | null) => {
-    if (!files) return;
-    const items = await Promise.all(
-      [...files].map(async (f) => ({
-        id: uid(),
-        name: f.name,
-        url: await readFileAsDataUrl(f),
-        addedAt: new Date().toISOString().slice(0, 10),
-      })),
-    );
-    update((s) => ({ ...s, media: [...items, ...s.media] }));
-    toast.success(`${items.length} file(s) added`);
+    if (!files?.length) return;
+    try {
+      const items = await Promise.all(
+        [...files].map(async (f) => ({
+          id: uid(),
+          name: f.name,
+          url: await uploadMediaFile(f),
+          addedAt: new Date().toISOString().slice(0, 10),
+        })),
+      );
+      update((s) => ({ ...s, media: [...items, ...s.media] }));
+      toast.success(`${items.length} file(s) added`);
+    } catch (err) {
+      console.error("Media upload failed:", err);
+      toast.error("Upload failed. Check Supabase Storage bucket/policies.");
+    }
   };
   return (
     <div>
       <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-input bg-card py-10 text-sm hover:border-brand">
         <Upload className="h-6 w-6 text-brand" />
         <span className="font-semibold">Upload images</span>
-        <span className="text-xs text-muted-foreground">Stored in this browser only (demo)</span>
+        <span className="text-xs text-muted-foreground">
+          {hasSupabaseEnv() ? "Uploaded to Supabase Storage" : "Stored in this browser only (demo)"}
+        </span>
         <input
           type="file"
           multiple

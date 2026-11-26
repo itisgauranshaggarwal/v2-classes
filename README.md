@@ -13,7 +13,7 @@ This repository is maintained with **OpenCode CLI** and standard Git workflows. 
 - **Styling**: Tailwind CSS v4, shadcn/ui-style components, Lucide icons
 - **Forms/Validation**: React Hook Form, Zod
 - **Testing**: Vitest, Testing Library, jsdom
-- **Planned backend**: Supabase (Auth, Postgres, Storage, RLS) — not integrated yet
+- **Backend**: Supabase (Auth, Postgres, Storage, RLS) — foundation integrated; requires project setup/migrations
 - **Planned deployment target**: Cloudflare (Workers-compatible TanStack Start/Nitro path; see audit)
 
 ## Project Structure
@@ -82,18 +82,22 @@ The dev server URL is printed by Vite/TanStack Start (typically `http://localhos
 
 ## Environment Variables
 
-The current application runs locally **without required environment variables**. `.env.example` documents current state and reserved future Supabase variables.
+Copy `.env.example` to `.env` and set Supabase values for database-backed mode:
 
-**Never commit** `.env`, `.dev.vars`, credentials, tokens, or service-role keys.
+```bash
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-anon-key
+```
 
-## Content & Admin (Current Demo State)
+If these are missing, the app falls back to local demo behavior for development. **Never commit** `.env`, `.dev.vars`, credentials, tokens, or service-role keys.
+
+## Content & Admin
 
 - All site content flows through `useContent()` in `src/lib/content/store.tsx`.
-- Current persistence is **browser localStorage** (demo-only). It is not shared across devices and is not a production database.
-- Admin `/admin` uses a **demo session** in `sessionStorage` and accepts any email/password. This is not production authentication.
-- Contact enquiries are validated client-side and stored locally for demo/admin visibility; no server email/database delivery is configured yet.
-
-These behaviors are intentionally documented and should be replaced by Supabase Auth/Postgres/Storage/RLS in a planned future phase.
+- **With Supabase configured**: content, faculty, achievements, timeline, media, and enquiries are stored in Supabase Postgres; media files upload to Supabase Storage; admin login uses Supabase Auth + `admin_users` allowlist.
+- **Without Supabase env vars**: the app falls back to local browser demo storage for development.
+- Apply SQL migrations in `supabase/migrations/` to your Supabase project before using database-backed mode.
+- Create an admin auth user in Supabase Auth, then add their `user_id` to `public.admin_users`.
 
 ## Deployment Notes (Cloudflare Readiness)
 
