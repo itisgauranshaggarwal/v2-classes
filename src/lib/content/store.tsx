@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import { defaultContent } from "./defaults";
 import type {
   Achievement,
@@ -126,7 +127,12 @@ function mapSite(row: Row): SiteContent {
 
 async function loadFromSupabase(): Promise<ContentState> {
   const supabase = getSupabaseBrowserClient();
-  const [siteRes, facultyRes, achievementsRes, timelineRes, enquiriesRes, mediaRes] =
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const isAuthed = Boolean(session);
+
+  const [siteRes, facultyRes, achievementsRes, timelineRes, mediaRes, enquiriesRes] =
     await Promise.all([
       supabase.from("site_content").select("*").eq("id", "default").maybeSingle(),
       supabase.from("faculty").select("*").order("sort_order", { ascending: true }),
@@ -136,8 +142,10 @@ async function loadFromSupabase(): Promise<ContentState> {
         .select("*")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true }),
-      supabase.from("enquiries").select("*").order("created_at", { ascending: false }),
       supabase.from("media").select("*").order("created_at", { ascending: false }),
+      isAuthed
+        ? supabase.from("enquiries").select("*").order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] as Row[], error: null }),
     ]);
 
   const errors = [
@@ -145,27 +153,30 @@ async function loadFromSupabase(): Promise<ContentState> {
     facultyRes.error,
     achievementsRes.error,
     timelineRes.error,
-    enquiriesRes.error,
     mediaRes.error,
+    enquiriesRes.error,
   ].filter(Boolean);
   if (errors.length) {
     console.error("Supabase content load errors:", errors);
   }
 
   return {
-    site: siteRes.data ? mapSite(siteRes.data) : defaultContent.site,
-    faculty: (facultyRes.data ?? []).map(mapFaculty),
-    achievements: (achievementsRes.data ?? []).map(mapAchievement),
-    timeline: (timelineRes.data ?? []).map(mapTimeline),
-    enquiries: (enquiriesRes.data ?? []).map(mapEnquiry),
-    media: (mediaRes.data ?? []).map(mapMedia),
+    site: siteRes.data ? mapSite(siteRes.data as Row) : defaultContent.site,
+    faculty: ((facultyRes.data ?? []) as Row[]).map(mapFaculty),
+    achievements: ((achievementsRes.data ?? []) as Row[]).map(mapAchievement),
+    timeline: ((timelineRes.data ?? []) as Row[]).map(mapTimeline),
+    enquiries: ((enquiriesRes.data ?? []) as Row[]).map(mapEnquiry),
+    media: ((mediaRes.data ?? []) as Row[]).map(mapMedia),
   };
 }
 
 async function persistSite(site: SiteContent) {
   const supabase = getSupabaseBrowserClient();
   const { error } = await supabase.from("site_content").upsert({ id: "default", ...site });
-  if (error) console.error("Failed to save site content:", error);
+  if (error) {
+    console.error("Failed to save site content:", error);
+    throw error;
+  }
 }
 
 async function persistFaculty(prev: FacultyMember[], next: FacultyMember[]) {
@@ -175,7 +186,10 @@ async function persistFaculty(prev: FacultyMember[], next: FacultyMember[]) {
   const removed = prev.filter((f) => !nextIds.has(f.id)).map((f) => f.id);
   if (removed.length) {
     const { error } = await supabase.from("faculty").delete().in("id", removed);
-    if (error) console.error("Failed to delete faculty:", error);
+    if (error) {
+      console.error("Failed to delete faculty:", error);
+      throw error;
+    }
   }
   if (next.length) {
     const rows = next.map((f) => ({
@@ -190,7 +204,10 @@ async function persistFaculty(prev: FacultyMember[], next: FacultyMember[]) {
       status: f.status,
     }));
     const { error } = await supabase.from("faculty").upsert(rows);
-    if (error) console.error("Failed to save faculty:", error);
+    if (error) {
+      console.error("Failed to save faculty:", error);
+      throw error;
+    }
   } else if (prevIds.size) {
     // all removed already handled
   }
@@ -202,7 +219,10 @@ async function persistAchievements(prev: Achievement[], next: Achievement[]) {
   const removed = prev.filter((a) => !nextIds.has(a.id)).map((a) => a.id);
   if (removed.length) {
     const { error } = await supabase.from("achievements").delete().in("id", removed);
-    if (error) console.error("Failed to delete achievements:", error);
+    if (error) {
+      console.error("Failed to delete achievements:", error);
+      throw error;
+    }
   }
   if (next.length) {
     const rows = next.map((a) => ({
@@ -219,7 +239,10 @@ async function persistAchievements(prev: Achievement[], next: Achievement[]) {
       is_sample: a.isSample,
     }));
     const { error } = await supabase.from("achievements").upsert(rows);
-    if (error) console.error("Failed to save achievements:", error);
+    if (error) {
+      console.error("Failed to save achievements:", error);
+      throw error;
+    }
   }
 }
 
@@ -229,7 +252,10 @@ async function persistTimeline(prev: TimelineItem[], next: TimelineItem[]) {
   const removed = prev.filter((t) => !nextIds.has(t.id)).map((t) => t.id);
   if (removed.length) {
     const { error } = await supabase.from("timeline").delete().in("id", removed);
-    if (error) console.error("Failed to delete timeline:", error);
+    if (error) {
+      console.error("Failed to delete timeline:", error);
+      throw error;
+    }
   }
   if (next.length) {
     const rows = next.map((t, i) => ({
@@ -242,7 +268,10 @@ async function persistTimeline(prev: TimelineItem[], next: TimelineItem[]) {
       sort_order: i,
     }));
     const { error } = await supabase.from("timeline").upsert(rows);
-    if (error) console.error("Failed to save timeline:", error);
+    if (error) {
+      console.error("Failed to save timeline:", error);
+      throw error;
+    }
   }
 }
 
@@ -252,7 +281,10 @@ async function persistEnquiries(prev: Enquiry[], next: Enquiry[]) {
   const removed = prev.filter((e) => !nextIds.has(e.id)).map((e) => e.id);
   if (removed.length) {
     const { error } = await supabase.from("enquiries").delete().in("id", removed);
-    if (error) console.error("Failed to delete enquiries:", error);
+    if (error) {
+      console.error("Failed to delete enquiries:", error);
+      throw error;
+    }
   }
   if (next.length) {
     const rows = next.map((e) => ({
@@ -265,7 +297,10 @@ async function persistEnquiries(prev: Enquiry[], next: Enquiry[]) {
       status: e.status,
     }));
     const { error } = await supabase.from("enquiries").upsert(rows);
-    if (error) console.error("Failed to save enquiries:", error);
+    if (error) {
+      console.error("Failed to save enquiries:", error);
+      throw error;
+    }
   }
 }
 
@@ -275,34 +310,45 @@ async function persistMedia(prev: MediaItem[], next: MediaItem[]) {
   const removed = prev.filter((m) => !nextIds.has(m.id)).map((m) => m.id);
   if (removed.length) {
     const { error } = await supabase.from("media").delete().in("id", removed);
-    if (error) console.error("Failed to delete media:", error);
+    if (error) {
+      console.error("Failed to delete media:", error);
+      throw error;
+    }
   }
   if (next.length) {
     const rows = next.map((m) => ({ id: m.id, name: m.name, url: m.url, added_at: m.addedAt }));
     const { error } = await supabase.from("media").upsert(rows);
-    if (error) console.error("Failed to save media:", error);
+    if (error) {
+      console.error("Failed to save media:", error);
+      throw error;
+    }
   }
 }
 
 async function persistDiff(prev: ContentState, next: ContentState) {
-  const supabase = getSupabaseBrowserClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const isAuthed = Boolean(session);
+  try {
+    const supabase = getSupabaseBrowserClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const isAuthed = Boolean(session);
 
-  const tasks: Promise<void>[] = [];
-  if (prev.site !== next.site && isAuthed) tasks.push(persistSite(next.site));
-  if (prev.faculty !== next.faculty && isAuthed)
-    tasks.push(persistFaculty(prev.faculty, next.faculty));
-  if (prev.achievements !== next.achievements && isAuthed)
-    tasks.push(persistAchievements(prev.achievements, next.achievements));
-  if (prev.timeline !== next.timeline && isAuthed)
-    tasks.push(persistTimeline(prev.timeline, next.timeline));
-  if (prev.enquiries !== next.enquiries && isAuthed)
-    tasks.push(persistEnquiries(prev.enquiries, next.enquiries));
-  if (prev.media !== next.media && isAuthed) tasks.push(persistMedia(prev.media, next.media));
-  await Promise.all(tasks);
+    const tasks: Promise<void>[] = [];
+    if (prev.site !== next.site && isAuthed) tasks.push(persistSite(next.site));
+    if (prev.faculty !== next.faculty && isAuthed)
+      tasks.push(persistFaculty(prev.faculty, next.faculty));
+    if (prev.achievements !== next.achievements && isAuthed)
+      tasks.push(persistAchievements(prev.achievements, next.achievements));
+    if (prev.timeline !== next.timeline && isAuthed)
+      tasks.push(persistTimeline(prev.timeline, next.timeline));
+    if (prev.enquiries !== next.enquiries && isAuthed)
+      tasks.push(persistEnquiries(prev.enquiries, next.enquiries));
+    if (prev.media !== next.media && isAuthed) tasks.push(persistMedia(prev.media, next.media));
+    await Promise.all(tasks);
+  } catch (err) {
+    console.error("Failed to persist content:", err);
+    toast.error("Could not save to Supabase. Check console/network for details.");
+  }
 }
 
 interface Ctx {
@@ -371,7 +417,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
 
   return (
     <ContentContext.Provider value={{ content, update, reset, ready, source }}>
-      {children}
+      {ready ? children : <div className="min-h-screen bg-background" aria-busy="true" />}
     </ContentContext.Provider>
   );
 }
