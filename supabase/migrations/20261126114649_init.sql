@@ -35,6 +35,7 @@ revoke all on function private.is_admin() from anon;
 revoke all on function private.is_admin() from authenticated;
 grant execute on function private.is_admin() to authenticated;
 
+drop policy if exists "Admins can read admin_users" on public.admin_users;
 create policy "Admins can read admin_users"
   on public.admin_users
   for select
@@ -56,18 +57,21 @@ create table if not exists public.site_content (
 
 alter table public.site_content enable row level security;
 
+drop policy if exists "Public can read site content" on public.site_content;
 create policy "Public can read site content"
   on public.site_content
   for select
   to anon, authenticated
   using (true);
 
+drop policy if exists "Admins can insert site content" on public.site_content;
 create policy "Admins can insert site content"
   on public.site_content
   for insert
   to authenticated
   with check (private.is_admin());
 
+drop policy if exists "Admins can update site content" on public.site_content;
 create policy "Admins can update site content"
   on public.site_content
   for update
@@ -75,6 +79,7 @@ create policy "Admins can update site content"
   using (private.is_admin())
   with check (private.is_admin());
 
+drop policy if exists "Admins can delete site content" on public.site_content;
 create policy "Admins can delete site content"
   on public.site_content
   for delete
@@ -98,18 +103,21 @@ create table if not exists public.faculty (
 
 alter table public.faculty enable row level security;
 
+drop policy if exists "Public can read published faculty" on public.faculty;
 create policy "Public can read published faculty"
   on public.faculty
   for select
   to anon, authenticated
   using (status = 'published' or private.is_admin());
 
+drop policy if exists "Admins can insert faculty" on public.faculty;
 create policy "Admins can insert faculty"
   on public.faculty
   for insert
   to authenticated
   with check (private.is_admin());
 
+drop policy if exists "Admins can update faculty" on public.faculty;
 create policy "Admins can update faculty"
   on public.faculty
   for update
@@ -117,6 +125,7 @@ create policy "Admins can update faculty"
   using (private.is_admin())
   with check (private.is_admin());
 
+drop policy if exists "Admins can delete faculty" on public.faculty;
 create policy "Admins can delete faculty"
   on public.faculty
   for delete
@@ -142,18 +151,21 @@ create table if not exists public.achievements (
 
 alter table public.achievements enable row level security;
 
+drop policy if exists "Public can read published achievements" on public.achievements;
 create policy "Public can read published achievements"
   on public.achievements
   for select
   to anon, authenticated
   using (status = 'published' or private.is_admin());
 
+drop policy if exists "Admins can insert achievements" on public.achievements;
 create policy "Admins can insert achievements"
   on public.achievements
   for insert
   to authenticated
   with check (private.is_admin());
 
+drop policy if exists "Admins can update achievements" on public.achievements;
 create policy "Admins can update achievements"
   on public.achievements
   for update
@@ -161,6 +173,7 @@ create policy "Admins can update achievements"
   using (private.is_admin())
   with check (private.is_admin());
 
+drop policy if exists "Admins can delete achievements" on public.achievements;
 create policy "Admins can delete achievements"
   on public.achievements
   for delete
@@ -182,18 +195,21 @@ create table if not exists public.timeline (
 
 alter table public.timeline enable row level security;
 
+drop policy if exists "Public can read published timeline" on public.timeline;
 create policy "Public can read published timeline"
   on public.timeline
   for select
   to anon, authenticated
   using (status = 'published' or private.is_admin());
 
+drop policy if exists "Admins can insert timeline" on public.timeline;
 create policy "Admins can insert timeline"
   on public.timeline
   for insert
   to authenticated
   with check (private.is_admin());
 
+drop policy if exists "Admins can update timeline" on public.timeline;
 create policy "Admins can update timeline"
   on public.timeline
   for update
@@ -201,6 +217,7 @@ create policy "Admins can update timeline"
   using (private.is_admin())
   with check (private.is_admin());
 
+drop policy if exists "Admins can delete timeline" on public.timeline;
 create policy "Admins can delete timeline"
   on public.timeline
   for delete
@@ -220,6 +237,7 @@ create table if not exists public.enquiries (
 
 alter table public.enquiries enable row level security;
 
+drop policy if exists "Public can submit enquiries" on public.enquiries;
 create policy "Public can submit enquiries"
   on public.enquiries
   for insert
@@ -232,12 +250,14 @@ create policy "Public can submit enquiries"
     and status = 'new'
   );
 
+drop policy if exists "Admins can read enquiries" on public.enquiries;
 create policy "Admins can read enquiries"
   on public.enquiries
   for select
   to authenticated
   using (private.is_admin());
 
+drop policy if exists "Admins can update enquiries" on public.enquiries;
 create policy "Admins can update enquiries"
   on public.enquiries
   for update
@@ -245,6 +265,7 @@ create policy "Admins can update enquiries"
   using (private.is_admin())
   with check (private.is_admin());
 
+drop policy if exists "Admins can delete enquiries" on public.enquiries;
 create policy "Admins can delete enquiries"
   on public.enquiries
   for delete
@@ -262,18 +283,21 @@ create table if not exists public.media (
 
 alter table public.media enable row level security;
 
+drop policy if exists "Public can read media" on public.media;
 create policy "Public can read media"
   on public.media
   for select
   to anon, authenticated
   using (true);
 
+drop policy if exists "Admins can insert media" on public.media;
 create policy "Admins can insert media"
   on public.media
   for insert
   to authenticated
   with check (private.is_admin());
 
+drop policy if exists "Admins can update media" on public.media;
 create policy "Admins can update media"
   on public.media
   for update
@@ -281,6 +305,7 @@ create policy "Admins can update media"
   using (private.is_admin())
   with check (private.is_admin());
 
+drop policy if exists "Admins can delete media" on public.media;
 create policy "Admins can delete media"
   on public.media
   for delete
