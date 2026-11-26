@@ -2,19 +2,42 @@ import { z } from "zod";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 
-export const enquirySchema = z.object({
-  name: z.string().trim().min(2, "Please enter your name").max(100, "Name is too long"),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^[+\d][\d\s-]{8,15}$/, "Enter a valid phone number"),
-  email: z.string().trim().email("Enter a valid email").max(255),
-  message: z
-    .string()
-    .trim()
-    .min(10, "Message should be at least 10 characters")
-    .max(1000, "Message is too long"),
-});
+const phoneSchema = z
+  .string()
+  .trim()
+  .refine((v) => v === "" || /^[+\d][\d\s-]{8,15}$/.test(v), "Enter a valid phone number");
+
+const emailSchema = z
+  .string()
+  .trim()
+  .refine((v) => v === "" || z.string().email().safeParse(v).success, "Enter a valid email")
+  .max(255, "Email is too long");
+
+export const enquirySchema = z
+  .object({
+    name: z.string().trim().min(2, "Please enter your name").max(100, "Name is too long"),
+    phone: phoneSchema,
+    email: emailSchema,
+    message: z
+      .string()
+      .trim()
+      .min(10, "Message should be at least 10 characters")
+      .max(1000, "Message is too long"),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.phone && !data.email) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["phone"],
+        message: "Provide a phone number or email",
+      });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["email"],
+        message: "Provide a phone number or email",
+      });
+    }
+  });
 export type EnquiryInput = z.infer<typeof enquirySchema>;
 
 export async function submitEnquiry(

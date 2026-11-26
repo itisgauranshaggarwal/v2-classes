@@ -170,8 +170,9 @@ function Contact() {
               <div>
                 <CheckCircle2 className="mx-auto h-12 w-12 text-brand" />
                 <h2 className="mt-4 text-3xl font-extrabold">Thank you!</h2>
-                <p className="mt-2 text-muted-foreground">Your enquiry has been recorded.</p>
-                <p className="placeholder-tag mt-4">Demo — online delivery not connected yet</p>
+                <p className="mt-2 text-muted-foreground">
+                  Your enquiry has been sent. We’ll get back to you soon.
+                </p>
                 <div>
                   <button onClick={() => setState("idle")} className="btn-ghost mt-6">
                     Send another
@@ -184,9 +185,9 @@ function Contact() {
               <h2 className="text-3xl font-extrabold">Send an enquiry</h2>
               <div className="grid gap-5 sm:grid-cols-2">
                 {field("name", "Full name")}
-                {field("phone", "Phone", "tel")}
+                {field("phone", "Phone (or email)", "tel")}
               </div>
-              {field("email", "Email", "email")}
+              {field("email", "Email (or phone)", "email")}
               {field("message", "Message")}
               <button
                 type="submit"

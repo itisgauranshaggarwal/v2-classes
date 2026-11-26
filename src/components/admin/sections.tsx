@@ -529,7 +529,9 @@ export function EnquiryManager() {
             <div>
               <p className="font-semibold">{e.name}</p>
               <p className="text-xs text-muted-foreground">
-                {e.phone} · {e.email} · {new Date(e.createdAt).toLocaleString()}
+                {[e.phone, e.email].filter(Boolean).join(" · ")}
+                {e.phone || e.email ? " · " : ""}
+                {new Date(e.createdAt).toLocaleString()}
               </p>
             </div>
             <div className="flex items-center gap-2">
