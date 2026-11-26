@@ -1,35 +1,81 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
+# AGENTS.md — V2 Classes Website
 
-## What Lovable manages
+Instructions for future OpenCode agents working in this repository.
 
-Rules outside this block are the project's own. Change the pieces below in
-Lovable, not by hand. With the [Lovable MCP](https://mcp.lovable.dev)
-connected, `send_message` asks Lovable to do it; otherwise ask the user to
-use the editor.
+## Project Summary
 
-- **Database.** Do not add or edit `supabase/migrations/` or `drizzle/`.
-  Ask Lovable to change the schema.
-- **Generated files.** Do not edit a file whose header says it is automatically
-  generated.
-- **AI gateway.** Keep model calls on Lovable's gateway, and keep
-  `LOVABLE_API_KEY` out of browser code.
-- **Connectors.** Lovable provides native connectors. `list_connectors` shows
-  which are enabled; `add_connector` only returns the dashboard link. When a
-  connector is enabled, calls go through the connector gateway and need
-  `LOVABLE_API_KEY`. When Lovable does not provide one, users can bring their
-  own key and store it in Secrets.
-- **Secrets.** Lovable manages them. Do not put secret values in the repo.
-<!-- LOVABLE:END -->
+- **Project**: V2 Classes official website (Sector 13, Hisar, Haryana, India).
+- **Stack**: TanStack Start + TanStack Router + React 19 + TypeScript + Vite 8 + Nitro + Tailwind CSS v4.
+- **Package manager**: npm.
+- **Current data layer**: localStorage demo content store (no Supabase integration yet).
+- **Deployment target (planned)**: Cloudflare, using a TanStack Start SSR-compatible path.
 
-## Project rules
-- All site content flows through `useContent()` (src/lib/content/store.tsx); it is a localStorage demo repository so swapping in a database only changes that file.
-- Admin editors reuse `CollectionManager` / `ObjectEditor` with field specs, so new content types need no new form code.
-- Missing real information is stored as `[bracketed]` text and rendered as a labelled placeholder; sample alumni use `isSample` and are excluded from statistics.
+## Non-Negotiable Rules
+
+1. **Preserve the approved UI/design**. Do not redesign, regenerate UI, or change typography/colors/layout/animations unless explicitly requested and necessary.
+2. **Do not rewrite from scratch**. Make incremental, maintainable changes.
+3. **Do not claim verification you did not run**. Report passed/failed/not run clearly.
+4. **No secrets in git**. Never commit `.env`, `.dev.vars`, credentials, tokens, or service keys.
+5. **No force-push** and no destructive git history rewrites.
+6. **Supabase is not implemented yet**. Do not add fake production auth/db behavior; document and prepare interfaces instead.
+7. **Admin auth is currently demo-only**. Do not present it as secure production authentication.
+
+## Key Directories
+
+- `src/routes/` — file-based routes (`__root.tsx`, `index.tsx`, `about.tsx`, `alumni.tsx`, `contact.tsx`, `admin.tsx`).
+- `src/components/site/` — public website components.
+- `src/components/admin/` — admin dashboard components.
+- `src/components/ui/` — shared UI primitives.
+- `src/lib/content/` — content types, defaults, localStorage demo store.
+- `src/lib/` — utilities, enquiry schema/submit placeholder, error handling.
+- `src/assets/` — local assets/asset metadata.
+- `docs/` — audit and technical documentation.
+
+## Content Architecture
+
+- All site content should flow through `useContent()` from `src/lib/content/store.tsx`.
+- `store.tsx` is the local demo repository. Future Supabase integration should replace load/save/data operations here (or behind an equivalent abstraction) while keeping consumer APIs stable where practical.
+- Missing real information should remain clearly labeled/placeholders; do not invent institute facts, alumni records, testimonials, or biographies.
+- Sample alumni entries use `isSample` and must be excluded from statistics.
+
+## Commands
+
+```bash
+npm install
+npm run dev
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+npm run format:check
+```
+
+## Verification Expectations
+
+Before finishing meaningful changes, run relevant checks:
+
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test`
+- `npm run build`
+
+If a check cannot run, report why. If UI/routes are affected, smoke test key pages: `/`, `/about`, `/alumni`, `/contact`, `/admin`.
+
+## Supabase Future Integration Guidance
+
+When implementing Supabase later (separate phase):
+
+- Use Supabase Auth for real admin authentication; remove demo sessionStorage login.
+- Use Postgres tables aligned with existing content types in `src/lib/content/types.ts`.
+- Add RLS policies for public read/published content and authenticated admin writes.
+- Use Supabase Storage for media uploads; replace data URL/localStorage media handling.
+- Store enquiries in DB; send notifications via secure server-side function/edge workflow.
+- Keep public UI components consuming stable content interfaces; avoid UI rewrites.
+
+## Git Rules
+
+- Small, descriptive commits.
+- No force-push.
+- No history rewrite on published branches.
+- Inspect `git status` and diffs before committing.
+- Never commit generated secrets or local env files.
