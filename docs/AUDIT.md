@@ -109,6 +109,32 @@ The project is a TanStack Start + React 19 + TypeScript + Tailwind v4 website fo
 6. **Admin UX**: add real loading/error states, optimistic updates where safe, and audit timestamps.
 7. **Contact flow**: server-side enquiry submission, spam protection, notification email, admin enquiry management backed by DB.
 
-## 7. Verification Status (to be updated after execution)
+## 7. Verification Status
 
-Verification commands will be run after dependency install and cleanup. Results should be recorded here as passed/failed/not run with notes.
+Executed in `v2-classes-official-website-main` on 2026-11-26 after `npm install`.
+
+| Check | Result | Notes |
+| --- | --- | --- |
+| `npm install` | **Passed** | npm reported 513 packages added, 0 vulnerabilities. `package-lock.json` generated. |
+| `npm run typecheck` | **Passed** | `tsc --noEmit` completed with no type errors. |
+| `npm run lint` | **Passed with warnings** | 0 errors, 10 pre-existing `react-refresh/only-export-components` warnings in UI/store files. |
+| `npm run test` | **Passed** | Vitest: 2 files passed, 4 tests passed. |
+| `npm run build` | **Passed** | Vite/Nitro production build completed; SSR/client outputs generated in `.output/`. |
+| `npm run dev` | **Not smoke-tested in browser automation** | Dev command not run as a persistent interactive session during this pass; build and tests passed. Manual local smoke test recommended. |
+| UI smoke test (browser) | **Not run** | No browser automation executed in this pass. Routes/components were statically inspected and build/tests passed. |
+
+## 8. Git Backup
+
+- **Repository**: https://github.com/itisgauranshaggarwal/v2-classes
+- **Backup branch**: `backup/pre-opencode-takeover`
+- **Backup commit**: `f5ef6f57fa991a2200856a833b3dcf6b3ac95320` — "chore: initial project backup (pre-opencode takeover)"
+- **Main branch**: pushed with cleanup commits after backup (see final report for latest hash).
+
+## 9. Remaining Issues / Manual Actions
+
+- **Admin auth is demo-only** (sessionStorage, any credentials). Must be replaced before production use.
+- **Content/enquiries/media are localStorage-only**. Not production persistence.
+- **Cloudflare deployment config not finalized**. Validate TanStack Start/Nitro/Cloudflare-compatible deployment path for pinned versions before deploying.
+- **Supabase not integrated**. Schema/Auth/RLS/Storage migration planned, not implemented.
+- **UI browser smoke test not run** in this automated pass; run `npm run dev` and verify `/`, `/about`, `/alumni`, `/contact`, `/admin` visually.
+- **Pre-existing lint warnings** in generated-style UI primitives/store exports can be cleaned up later if desired (non-blocking).
