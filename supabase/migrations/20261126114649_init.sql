@@ -7,6 +7,15 @@ create extension if not exists pgcrypto;
 -- Private schema for security definer helpers (not exposed via Data API).
 create schema if not exists private;
 
+-- Admin allowlist. Add rows manually in Supabase after creating auth users.
+create table if not exists public.admin_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  email text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.admin_users enable row level security;
+
 create or replace function private.is_admin()
 returns boolean
 language sql
@@ -25,15 +34,6 @@ revoke all on function private.is_admin() from public;
 revoke all on function private.is_admin() from anon;
 revoke all on function private.is_admin() from authenticated;
 grant execute on function private.is_admin() to authenticated;
-
--- Admin allowlist. Add rows manually in Supabase after creating auth users.
-create table if not exists public.admin_users (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  email text,
-  created_at timestamptz not null default now()
-);
-
-alter table public.admin_users enable row level security;
 
 create policy "Admins can read admin_users"
   on public.admin_users
