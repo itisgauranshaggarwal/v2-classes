@@ -61,13 +61,22 @@ function mapFaculty(row: Row): FacultyMember {
 }
 
 function mapAchievement(row: Row): Achievement {
+  const category = row["category"];
   return {
     id: String(row["id"] ?? ""),
     studentName: String(row["student_name"] ?? ""),
     photo: String(row["photo"] ?? ""),
-    institute: String(row["institute"] ?? row["institution"] ?? ""),
-    rank: String(row["rank"] ?? row["result"] ?? ""),
+    exam: String(row["exam"] ?? ""),
+    category:
+      category === "iit-jee" || category === "neet" || category === "boards" || category === "other"
+        ? category
+        : "other",
+    result: String(row["result"] ?? ""),
+    institution: String(row["institution"] ?? ""),
+    year: String(row["year"] ?? ""),
+    featured: Boolean(row["featured"]),
     status: row["status"] === "draft" ? "draft" : "published",
+    isSample: Boolean(row["is_sample"]),
   };
 }
 
@@ -226,9 +235,14 @@ async function persistAchievements(prev: Achievement[], next: Achievement[]) {
       id: a.id,
       student_name: a.studentName,
       photo: a.photo,
-      institute: a.institute,
-      rank: a.rank,
+      exam: a.exam,
+      category: a.category,
+      result: a.result,
+      institution: a.institution,
+      year: a.year,
+      featured: a.featured,
       status: a.status,
+      is_sample: a.isSample,
     }));
     const { error } = await supabase.from("achievements").upsert(rows);
     if (error) {

@@ -19,7 +19,7 @@ import type {
   SiteContent,
   Enquiry,
 } from "@/lib/content/types";
-/* alumni categories removed - simplified achievement model */
+import { CATEGORY_LABELS } from "@/lib/content/alumni";
 import { CollectionManager } from "./CollectionManager";
 import { ObjectEditor } from "./ObjectEditor";
 import { StatusBadge, STATUS_OPTIONS, Toggle, FieldRow, type FieldSpec } from "./fields";
@@ -51,11 +51,12 @@ function useCollection<K extends "faculty" | "achievements" | "timeline">(k: K) 
 
 export function Overview({ go }: { go: (s: string) => void }) {
   const { content } = useContent();
+  const real = content.achievements.filter((a) => !a.isSample).length;
   const cards = [
     {
       label: "Alumni achievements",
       value: content.achievements.length,
-      sub: "student achievements",
+      sub: `${real} real · ${content.achievements.length - real} sample`,
       Icon: Trophy,
       to: "alumni",
     },
@@ -201,36 +202,64 @@ export function AlumniManager() {
         id: uid(),
         studentName: "",
         photo: "",
-        institute: "",
-        rank: "",
-        status: "published",
+        exam: "",
+        category: "iit-jee",
+        result: "",
+        institution: "",
+        year: String(new Date().getFullYear()),
+        featured: false,
+        status: "draft",
+        isSample: false,
       })}
       columns={[
         {
           label: "Student",
           render: (a) => (
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 overflow-hidden rounded-lg bg-surface">
-                {a.photo && <img src={a.photo} alt="" className="h-full w-full object-cover" />}
-              </div>
-              <div>
-                <p className="font-semibold">{a.studentName || "Untitled"}</p>
-                <p className="text-xs text-muted-foreground">{a.institute}</p>
-              </div>
+            <div>
+              <p className="font-semibold">{a.studentName || "Untitled"}</p>
+              {a.isSample && <span className="placeholder-tag mt-1">Sample</span>}
             </div>
           ),
         },
         {
-          label: "Rank / Position",
-          render: (a) => <span className="font-semibold text-brand">{a.rank}</span>,
+          label: "Exam",
+          render: (a) => (
+            <span>
+              {CATEGORY_LABELS[a.category]}
+              <br />
+              <span className="text-xs text-muted-foreground">{a.exam}</span>
+            </span>
+          ),
+        },
+        { label: "Result", render: (a) => a.result },
+        { label: "Year", render: (a) => a.year },
+        {
+          label: "Featured",
+          render: (a) => (
+            <Toggle
+              label="Featured"
+              checked={a.featured}
+              onChange={(f) => save({ ...a, featured: f })}
+            />
+          ),
         },
         { label: "Status", render: (a) => <StatusBadge status={a.status} /> },
       ]}
       fields={[
         { key: "studentName", label: "Student name" },
-        { key: "photo", label: "Photo", type: "image" },
-        { key: "institute", label: "Institute / admission" },
-        { key: "rank", label: "Rank / position achieved" },
+        {
+          key: "category",
+          label: "Category",
+          type: "select",
+          options: Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value, label })),
+        },
+        { key: "exam", label: "Examination" },
+        { key: "result", label: "Rank / score / percentage" },
+        { key: "institution", label: "Institution / admission" },
+        { key: "year", label: "Year" },
+        { key: "photo", label: "Photo (optional)", type: "image" },
+        { key: "featured", label: "Featured", type: "toggle" },
+        { key: "isSample", label: "Sample entry (design preview)", type: "toggle" },
         { key: "status", label: "Status", type: "select", options: STATUS_OPTIONS },
       ]}
     />
