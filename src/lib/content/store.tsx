@@ -19,7 +19,7 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
  * - Otherwise: falls back to local defaults/localStorage demo mode for local development.
  * Consumers use `useContent()` unchanged.
  */
-const KEY = "v2-content-v1";
+const KEY = "v2-content-v2";
 
 function loadLocal(): ContentState {
   try {
