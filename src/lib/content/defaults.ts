@@ -40,8 +40,7 @@ export const defaultContent: ContentState = {
       videoUrl:
         "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
       poster: hall.url,
-      isPlaceholder: true,
-      caption: "Placeholder video — the real institute walkthrough will replace this.",
+      caption: "A look inside V2 Classes.",
     },
     contact: {
       address: "50, Shopping Complex, MDR108, Sector 13, Hisar, Haryana 125005",

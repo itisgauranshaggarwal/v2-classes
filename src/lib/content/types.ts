@@ -75,7 +75,6 @@ export interface SiteContent {
     title: string;
     videoUrl: string;
     poster: string;
-    isPlaceholder: boolean;
     caption: string;
   };
   contact: {

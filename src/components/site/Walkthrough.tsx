@@ -82,13 +82,6 @@ export function Walkthrough() {
       });
   };
 
-  const label = w.isPlaceholder && (
-    <span className="placeholder-tag">
-      <Film className="h-3 w-3" />
-      Placeholder footage
-    </span>
-  );
-
   return (
     <section ref={sectionRef} aria-labelledby="walk-title" className="mt-32">
       <div className="container-x mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
@@ -99,7 +92,6 @@ export function Walkthrough() {
           </h2>
         </div>
         <div className="max-w-sm space-y-3 text-sm text-muted-foreground">
-          {label}
           <p>{w.caption}</p>
         </div>
       </div>
@@ -199,7 +191,6 @@ export function Walkthrough() {
             />
             <div className="absolute top-20 left-0 right-0 container-x flex items-center justify-between text-primary-foreground">
               <div className="flex items-center gap-3">
-                {label}
                 <span className="hidden text-xs opacity-80 sm:inline">
                   Scroll, swipe or use ← → keys
                 </span>

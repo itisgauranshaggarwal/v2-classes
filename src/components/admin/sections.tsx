@@ -311,7 +311,6 @@ export function WalkthroughEditor() {
           },
           { key: "caption", label: "Caption", type: "textarea" },
           { key: "poster", label: "Poster / fallback image", type: "image" },
-          { key: "isPlaceholder", label: "Show 'Placeholder footage' label", type: "toggle" },
         ]}
       />
       <div className="rounded-xl border border-border bg-card p-4">
