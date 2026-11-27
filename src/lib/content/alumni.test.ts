@@ -6,26 +6,27 @@ const base: Achievement = {
   id: "1",
   studentName: "Asha",
   photo: "",
-  exam: "NEET",
-  category: "neet",
-  result: "",
-  institution: "",
-  year: "",
-  featured: false,
+  institute: "IIT Delhi",
+  rank: "AIR 12",
   status: "published",
-  isSample: false,
 };
 
 describe("alumni rules", () => {
-  it("hides statistics when only sample entries exist", () => {
-    expect(achievementStats([{ ...base, isSample: true }])).toBeNull();
+  it("returns null stats when there are no published achievements", () => {
+    expect(achievementStats([{ ...base, status: "draft" }])).toBeNull();
   });
+
   it("never shows draft achievements publicly", () => {
-    expect(filterAchievements([{ ...base, status: "draft" }], "", "all")).toHaveLength(0);
+    expect(filterAchievements([{ ...base, status: "draft" }])).toHaveLength(0);
   });
-  it("filters by category and searches by name", () => {
-    const list = [base, { ...base, id: "2", studentName: "Ravi", category: "iit-jee" as const }];
-    expect(filterAchievements(list, "", "iit-jee").map((a) => a.id)).toEqual(["2"]);
-    expect(filterAchievements(list, "ash", "all").map((a) => a.id)).toEqual(["1"]);
+
+  it("searches by name, institute, or rank", () => {
+    const list = [
+      base,
+      { ...base, id: "2", studentName: "Ravi", institute: "AIIMS", rank: "AIR 5" },
+    ];
+    expect(filterAchievements(list, "ravi").map((a) => a.id)).toEqual(["2"]);
+    expect(filterAchievements(list, "aiims").map((a) => a.id)).toEqual(["2"]);
+    expect(filterAchievements(list, "air 12").map((a) => a.id)).toEqual(["1"]);
   });
 });

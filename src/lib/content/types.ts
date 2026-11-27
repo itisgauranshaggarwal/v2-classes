@@ -1,19 +1,13 @@
 // Content models. Shaped to map 1:1 onto future database tables (one type = one table).
 export type PublishState = "draft" | "published";
-export type ExamCategory = "iit-jee" | "neet" | "boards" | "other";
 
 export interface Achievement {
   id: string;
   studentName: string;
   photo: string; // URL or empty string
-  exam: string;
-  category: ExamCategory;
-  result: string; // rank, score or percentage
-  institution: string;
-  year: string;
-  featured: boolean;
+  institute: string;
+  rank: string; // rank or position achieved
   status: PublishState;
-  isSample: boolean; // true = placeholder entry for design preview only
 }
 
 export interface FacultyMember {
