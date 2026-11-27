@@ -1,133 +1,201 @@
-# V2 Classes Official Website
+# V2 Classes Website
 
-Official website for **V2 Classes**, an educational institute in Sector 13, Hisar, Haryana, India (established 2000).
+Official website and content management system for **V2 Classes**, an educational institute in Sector 13, Hisar, Haryana, India.
 
-This repository is maintained with **OpenCode CLI** and standard Git workflows. The existing approved UI is preserved; changes should focus on stability, maintainability, and planned backend integration.
+Built with **TanStack Start + React 19 + TypeScript + Tailwind CSS v4 + Supabase**.
+
+> The approved UI is preserved. This repo is intended for maintainable local development, Supabase-backed content management, and SSR deployment.
+
+## Features
+
+- **Public website**: Home, About, Alumni, Contact pages with responsive UI.
+- **Admin panel** (`/admin`): manage site content, faculty, achievements, timeline, walkthrough, contact/social info, media, and enquiries.
+- **Supabase backend**: Auth, Postgres, Storage, and RLS policies.
+- **Demo fallback**: if Supabase env vars are missing, the app falls back to local browser demo storage for development.
+- **SSR-ready**: TanStack Start + Nitro/Vite build (not a static SPA).
 
 ## Tech Stack
 
-- **Framework**: [TanStack Start](https://tanstack.com/start) (React 19, SSR)
-- **Routing**: [TanStack Router](https://tanstack.com/router) file-based routes
-- **Language**: TypeScript
-- **Build**: Vite 8, Nitro
-- **Styling**: Tailwind CSS v4, shadcn/ui-style components, Lucide icons
-- **Forms/Validation**: React Hook Form, Zod
-- **Testing**: Vitest, Testing Library, jsdom
-- **Backend**: Supabase (Auth, Postgres, Storage, RLS) — foundation integrated; requires project setup/migrations
-- **Planned deployment target**: Cloudflare (Workers-compatible TanStack Start/Nitro path; see audit)
+| Layer      | Tech                                                             |
+| ---------- | ---------------------------------------------------------------- |
+| Framework  | [TanStack Start](https://tanstack.com/start) (React 19, SSR)     |
+| Routing    | [TanStack Router](https://tanstack.com/router) (file-based)      |
+| Language   | TypeScript                                                       |
+| Styling    | Tailwind CSS v4, shadcn/ui-style components, Lucide icons        |
+| Backend    | [Supabase](https://supabase.com/) (Auth, Postgres, Storage, RLS) |
+| Validation | Zod, React Hook Form                                             |
+| Build      | Vite 8, Nitro                                                    |
+| Testing    | Vitest, Testing Library, jsdom                                   |
 
 ## Project Structure
 
 ```text
 .
-├── docs/                    # Audit and project documentation
+├── docs/                    # Audit and technical notes
 ├── public/                  # Static public assets
 ├── src/
-│   ├── assets/              # Local image/asset metadata used by UI
+│   ├── assets/              # Local assets/metadata
 │   ├── components/
-│   │   ├── admin/           # Admin dashboard editors/managers
-│   │   ├── site/            # Public site components
+│   │   ├── admin/           # Admin dashboard UI/editors
+│   │   ├── site/            # Public website components
 │   │   └── ui/              # Shared UI primitives
-│   ├── hooks/               # Shared React hooks
 │   ├── lib/
-│   │   ├── content/         # Content types, defaults, local demo store
-│   │   ├── enquiries.ts     # Contact form schema/placeholder submit
-│   │   ├── error-capture.ts # Server/runtime error capture helpers
-│   │   └── error-page.ts    # SSR error page rendering
+│   │   ├── content/         # Content types/defaults/store
+│   │   ├── supabase/        # Supabase client/env/storage helpers
+│   │   └── enquiries.ts     # Contact form schema/submission
 │   ├── routes/              # TanStack Router file routes
-│   ├── test/                # Test setup and app tests
-│   ├── router.tsx           # Router creation
-│   ├── server.ts            # Custom SSR server entry/wrapper
-│   ├── start.ts             # TanStack Start middleware/config
-│   └── styles.css           # Tailwind v4 theme/tokens/global styles
-├── .env.example             # Safe environment variable template
-├── AGENTS.md                # Instructions for future coding agents
-├── CONTRIBUTING.md          # Development workflow and conventions
+│   └── test/                # Tests
+├── supabase/
+│   ├── migrations/          # SQL migrations (schema, RLS, seed, storage, grants)
+│   └── setup-admin.sql      # Template for adding an admin user
+├── .env.example
 ├── package.json
-├── tsconfig.json
 └── vite.config.ts
 ```
 
 ## Prerequisites
 
-- **Node.js**: 22+ (see `.nvmrc`)
-- **npm**: 10+ (comes with Node)
+- **Node.js 22+** (see `.nvmrc`)
+- **npm 10+**
 - **Git**
+- A **Supabase** project (for database-backed mode)
 
-## Local Development
+## Local Setup
+
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/itisgauranshaggarwal/v2-classes.git
 cd v2-classes
 npm install
-cp .env.example .env   # optional; no variables required for current demo
-npm run dev
 ```
 
-The dev server URL is printed by Vite/TanStack Start (typically `http://localhost:3000` unless configured otherwise).
-
-## Available Commands
-
-| Command                | Purpose                                       |
-| ---------------------- | --------------------------------------------- |
-| `npm run dev`          | Start local development server                |
-| `npm run build`        | Create production build                       |
-| `npm run preview`      | Preview production build locally              |
-| `npm run lint`         | Run ESLint                                    |
-| `npm run format`       | Format files with Prettier                    |
-| `npm run format:check` | Check Prettier formatting                     |
-| `npm run typecheck`    | Run TypeScript type checking (`tsc --noEmit`) |
-| `npm run test`         | Run Vitest tests once                         |
-| `npm run test:watch`   | Run Vitest in watch mode                      |
-
-## Environment Variables
-
-Copy `.env.example` to `.env` and set Supabase values for database-backed mode:
+### 2. Configure environment variables
 
 ```bash
+cp .env.example .env
+```
+
+Set values in `.env`:
+
+```env
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-anon-key
 ```
 
-If these are missing, the app falls back to local demo behavior for development. **Never commit** `.env`, `.dev.vars`, credentials, tokens, or service-role keys.
+Get these from **Supabase Dashboard > Project Settings > API**.
 
-## Content & Admin
+> Never commit `.env` or service-role keys. Only `VITE_` publishable values belong in frontend env.
 
-- All site content flows through `useContent()` in `src/lib/content/store.tsx`.
-- **With Supabase configured**: content, faculty, achievements, timeline, media, and enquiries are stored in Supabase Postgres; media files upload to Supabase Storage; admin login uses Supabase Auth + `admin_users` allowlist.
-- **Without Supabase env vars**: the app falls back to local browser demo storage for development.
-- Apply SQL migrations in `supabase/migrations/` to your Supabase project before using database-backed mode.
-- Create an admin auth user in Supabase Auth, then add their `user_id` to `public.admin_users`.
+### 3. Set up Supabase
 
-## Deployment Notes (Cloudflare Readiness)
+Run SQL migrations in **Supabase Dashboard > SQL Editor** in order:
 
-The project uses TanStack Start SSR with Nitro. It is **not** a static-only React site. Before deploying to Cloudflare:
+1. `supabase/migrations/20261126114649_init.sql`
+2. `supabase/migrations/20261126114739_seed_defaults.sql`
+3. `supabase/migrations/20261126115616_storage_bucket.sql`
+4. `supabase/migrations/20261126162756_enquiry_contact_optional.sql`
+5. `supabase/migrations/20261126162826_tighten_grants.sql`
 
-1. Confirm the supported TanStack Start + Nitro/Cloudflare deployment path for the pinned versions.
-2. Configure required Cloudflare adapter/plugin/wrangler settings for SSR.
-3. Validate build output, runtime bindings, and environment variables.
-4. Run smoke tests on preview deployment.
+Or use Supabase CLI if your project is linked.
 
-See `docs/AUDIT.md` for the current Cloudflare readiness assessment.
+### 4. Create an admin user
 
-## Git Workflow
+1. **Supabase Dashboard > Authentication > Users > Add user** (email + password).
+2. Copy the user UUID.
+3. Run `supabase/setup-admin.sql` in SQL Editor with your UUID/email:
 
-- Work on feature/fix branches when appropriate.
-- Keep commits small and descriptive.
-- Do not rewrite published history.
-- Do not force-push.
-- Do not commit secrets, `.env` files, `node_modules`, or build artifacts.
+```sql
+insert into public.admin_users (user_id, email)
+values ('AUTH_USER_UUID', 'admin@example.com')
+on conflict (user_id) do update
+set email = excluded.email;
+```
+
+### 5. Start development server
+
+```bash
+npm run dev
+```
+
+Open the local URL printed by Vite (usually `http://localhost:3000`).
+
+## Available Commands
+
+| Command                | Purpose                           |
+| ---------------------- | --------------------------------- |
+| `npm run dev`          | Start local dev server            |
+| `npm run build`        | Create production build           |
+| `npm run preview`      | Preview production build locally  |
+| `npm run lint`         | Run ESLint                        |
+| `npm run typecheck`    | TypeScript check (`tsc --noEmit`) |
+| `npm run test`         | Run tests once                    |
+| `npm run test:watch`   | Run tests in watch mode           |
+| `npm run format`       | Format with Prettier              |
+| `npm run format:check` | Check formatting                  |
+
+## Admin Panel
+
+- URL: `/admin`
+- Sign in with a Supabase Auth user that exists in `public.admin_users`.
+- Manage: home/about content, faculty, achievements, timeline, walkthrough video, contact/social settings, media, enquiries.
+- Media uploads go to Supabase Storage when Supabase is configured.
+
+## Deployment (Cloudflare / SSR)
+
+This project is **SSR**, not a static SPA. Deploy it using a TanStack Start-compatible SSR path.
+
+### Before deploy
+
+1. Confirm the correct deployment path for the pinned versions:
+   - TanStack Start `1.168.x`
+   - Vite `8.x`
+   - Nitro `3.0.260603-beta`
+2. Add required Cloudflare/Wrangler/adapter configuration for SSR.
+3. Set environment variables in your hosting provider:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`
+4. Ensure Supabase migrations are applied and admin user is configured.
+
+### Deploy checklist
+
+- [ ] Build passes locally (`npm run build`)
+- [ ] Env vars set in hosting
+- [ ] Supabase migrations applied
+- [ ] Admin user added to `public.admin_users`
+- [ ] Preview deploy smoke test: `/`, `/about`, `/alumni`, `/contact`, `/admin`
+- [ ] Contact form submits enquiry
+- [ ] Admin can edit/save content
+- [ ] Media upload works
+
+### Useful references
+
+- [TanStack Start Hosting](https://tanstack.com/start/latest/docs/framework/react/guide/hosting)
+- [Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)
+- [Supabase Docs](https://supabase.com/docs)
+
+## Handoff / Ownership Checklist
+
+When handing the project to someone else, provide access to:
+
+- **GitHub repo** (code)
+- **Supabase project/org** (Auth, DB, Storage, logs, billing)
+- **Hosting/Cloudflare project** (deploys, env vars, domain/DNS)
+- **Domain registrar/DNS**
+- **Admin website login** (Supabase Auth user + `admin_users` row)
+
+Share secrets securely via a password manager. Never commit `.env`, service-role keys, or tokens.
 
 ## Troubleshooting
 
-- **Install issues**: confirm Node 22+ (`node -v`) and remove `node_modules` + rerun `npm install`.
-- **Port in use**: Vite will usually pick another port; check terminal output.
-- **Type/lint errors**: run `npm run typecheck` and `npm run lint` for exact locations.
-- **Stale content in UI**: admin/content is localStorage-backed; use Admin Settings > Reset demo data or clear `v2-content-v1` in browser storage.
-- **SSR/build issues**: inspect `vite.config.ts`, `src/server.ts`, and `src/start.ts`; avoid reintroducing Lovable-specific wrappers.
+- **Still in demo mode**: check `.env` exists, has correct `VITE_*` keys, and restart `npm run dev`.
+- **Admin login fails**: confirm user exists in Supabase Auth and in `public.admin_users`.
+- **Saves not persisting**: check browser Network/Console for Supabase errors; confirm migrations and RLS/grants applied.
+- **404 images**: placeholder Lovable-hosted asset URLs may remain until replaced with real assets via admin.
+- **SSR deploy issues**: verify Cloudflare/Nitro/TanStack Start compatibility for pinned versions.
 
 ## Documentation
 
-- [docs/AUDIT.md](docs/AUDIT.md) — codebase audit, cleanup notes, Cloudflare/Supabase readiness
-- [AGENTS.md](AGENTS.md) — instructions for future OpenCode agents
-- [CONTRIBUTING.md](CONTRIBUTING.md) — contribution/development guidelines
+- [docs/AUDIT.md](docs/AUDIT.md) - audit and technical notes
+- [AGENTS.md](AGENTS.md) - agent/developer guidance
+- [CONTRIBUTING.md](CONTRIBUTING.md) - contribution workflow
