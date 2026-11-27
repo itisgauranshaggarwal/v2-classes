@@ -23,25 +23,22 @@ export function SiteFooter() {
             <span className="sr-only">{settings.siteName}</span>
           </div>
           <p className="mt-6 text-sm leading-relaxed opacity-70">{settings.footerText}</p>
-          <div className="mt-6 flex gap-2">
-            {socials.length === 0 && (
-              <span className="text-xs opacity-50">
-                Social links can be added from the admin dashboard.
-              </span>
-            )}
-            {socials.map(({ href, label, Icon }) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={label}
-                className="grid h-10 w-10 place-items-center rounded-full border border-primary-foreground/20 transition hover:border-brand hover:bg-brand"
-              >
-                <Icon className="h-4 w-4" />
-              </a>
-            ))}
-          </div>
+          {socials.length > 0 ? (
+            <div className="mt-6 flex gap-2">
+              {socials.map(({ href, label, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={label}
+                  className="grid h-10 w-10 place-items-center rounded-full border border-primary-foreground/20 transition hover:border-brand hover:bg-brand"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
+          ) : null}
         </div>
         <nav aria-label="Footer" className="flex flex-col gap-3 text-sm">
           <span className="eyebrow !text-primary-foreground/50">Explore</span>
@@ -53,6 +50,9 @@ export function SiteFooter() {
           </Link>
           <Link to="/alumni" className="opacity-80 hover:opacity-100">
             Alumni
+          </Link>
+          <Link to="/gallery" className="opacity-80 hover:opacity-100">
+            Gallery
           </Link>
           <Link to="/contact" className="opacity-80 hover:opacity-100">
             Contact Us

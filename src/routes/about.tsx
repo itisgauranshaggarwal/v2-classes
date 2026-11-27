@@ -3,8 +3,7 @@ import { UserRound } from "lucide-react";
 import { useContent } from "@/lib/content/store";
 import { Editable } from "@/components/site/Editable";
 import { PageHero } from "@/components/site/PageHero";
-import hall from "@/assets/classroom_hall.jpg.asset.json";
-import board from "@/assets/classroom_board.jpg.asset.json";
+/* classroom placeholder photos removed — Gallery section now showcases photos */
 import {
   absoluteUrl,
   breadcrumbSchema,
@@ -49,7 +48,7 @@ const facultySchema = [
 
 export const Route = createFileRoute("/about")({
   head: () => ({
-    meta: seoMeta({ title, description, path: "/about", image: absoluteUrl(hall.url) }),
+    meta: seoMeta({ title, description, path: "/about" }),
     links: [canonicalLink("/about")],
     scripts: [
       jsonLd(organizationSchema),
@@ -99,21 +98,6 @@ function About() {
       >
         {a.intro}
       </PageHero>
-
-      <section className="container-x mt-16 grid gap-4 md:grid-cols-[1.6fr_1fr]">
-        <img
-          src={hall.url}
-          alt="Classroom hall at V2 Classes"
-          loading="lazy"
-          className="h-80 w-full rounded-xl object-cover md:h-[28rem]"
-        />
-        <img
-          src={board.url}
-          alt="Classroom with projection board at V2 Classes"
-          loading="lazy"
-          className="h-80 w-full rounded-xl object-cover md:mt-16 md:h-[28rem]"
-        />
-      </section>
 
       <article className="container-x mt-20">
         <div className="mx-auto max-w-[42rem] space-y-14">

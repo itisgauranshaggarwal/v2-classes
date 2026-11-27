@@ -61,22 +61,15 @@ function mapFaculty(row: Row): FacultyMember {
 }
 
 function mapAchievement(row: Row): Achievement {
-  const category = row["category"];
   return {
     id: String(row["id"] ?? ""),
-    studentName: String(row["student_name"] ?? ""),
+    featured: Boolean(row["featured"]),
+    name: String(row["name"] ?? row["student_name"] ?? ""),
     photo: String(row["photo"] ?? ""),
     exam: String(row["exam"] ?? ""),
-    category:
-      category === "iit-jee" || category === "neet" || category === "boards" || category === "other"
-        ? category
-        : "other",
-    result: String(row["result"] ?? ""),
-    institution: String(row["institution"] ?? ""),
-    year: String(row["year"] ?? ""),
-    featured: Boolean(row["featured"]),
+    achievement: String(row["achievement"] ?? row["result"] ?? ""),
+    extraField: String(row["extra_field"] ?? ""),
     status: row["status"] === "draft" ? "draft" : "published",
-    isSample: Boolean(row["is_sample"]),
   };
 }
 
@@ -233,16 +226,13 @@ async function persistAchievements(prev: Achievement[], next: Achievement[]) {
   if (next.length) {
     const rows = next.map((a) => ({
       id: a.id,
-      student_name: a.studentName,
+      featured: a.featured,
+      name: a.name,
       photo: a.photo,
       exam: a.exam,
-      category: a.category,
-      result: a.result,
-      institution: a.institution,
-      year: a.year,
-      featured: a.featured,
+      achievement: a.achievement,
+      extra_field: a.extraField,
       status: a.status,
-      is_sample: a.isSample,
     }));
     const { error } = await supabase.from("achievements").upsert(rows);
     if (error) {

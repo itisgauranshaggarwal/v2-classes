@@ -19,7 +19,7 @@ import type {
   SiteContent,
   Enquiry,
 } from "@/lib/content/types";
-import { CATEGORY_LABELS } from "@/lib/content/alumni";
+
 import { CollectionManager } from "./CollectionManager";
 import { ObjectEditor } from "./ObjectEditor";
 import { StatusBadge, STATUS_OPTIONS, Toggle, FieldRow, type FieldSpec } from "./fields";
@@ -51,12 +51,11 @@ function useCollection<K extends "faculty" | "achievements" | "timeline">(k: K) 
 
 export function Overview({ go }: { go: (s: string) => void }) {
   const { content } = useContent();
-  const real = content.achievements.filter((a) => !a.isSample).length;
   const cards = [
     {
       label: "Alumni achievements",
       value: content.achievements.length,
-      sub: `${real} real · ${content.achievements.length - real} sample`,
+      sub: "published & draft records",
       Icon: Trophy,
       to: "alumni",
     },
@@ -200,39 +199,35 @@ export function AlumniManager() {
       addLabel="Add achievement"
       create={() => ({
         id: uid(),
-        studentName: "",
+        featured: false,
+        name: "",
         photo: "",
         exam: "",
-        category: "iit-jee",
-        result: "",
-        institution: "",
-        year: String(new Date().getFullYear()),
-        featured: false,
-        status: "draft",
-        isSample: false,
+        achievement: "",
+        extraField: "",
+        status: "published",
       })}
       columns={[
         {
           label: "Student",
           render: (a) => (
-            <div>
-              <p className="font-semibold">{a.studentName || "Untitled"}</p>
-              {a.isSample && <span className="placeholder-tag mt-1">Sample</span>}
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 overflow-hidden rounded-lg bg-surface">
+                {a.photo ? (
+                  <img src={a.photo} alt="" className="h-full w-full object-cover" />
+                ) : null}
+              </div>
+              <div>
+                <p className="font-semibold">{a.name || "Untitled"}</p>
+                <p className="text-xs text-muted-foreground">{a.exam}</p>
+              </div>
             </div>
           ),
         },
         {
-          label: "Exam",
-          render: (a) => (
-            <span>
-              {CATEGORY_LABELS[a.category]}
-              <br />
-              <span className="text-xs text-muted-foreground">{a.exam}</span>
-            </span>
-          ),
+          label: "Achievement",
+          render: (a) => <span className="font-semibold text-brand">{a.achievement}</span>,
         },
-        { label: "Result", render: (a) => a.result },
-        { label: "Year", render: (a) => a.year },
         {
           label: "Featured",
           render: (a) => (
@@ -246,20 +241,12 @@ export function AlumniManager() {
         { label: "Status", render: (a) => <StatusBadge status={a.status} /> },
       ]}
       fields={[
-        { key: "studentName", label: "Student name" },
-        {
-          key: "category",
-          label: "Category",
-          type: "select",
-          options: Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value, label })),
-        },
-        { key: "exam", label: "Examination" },
-        { key: "result", label: "Rank / score / percentage" },
-        { key: "institution", label: "Institution / admission" },
-        { key: "year", label: "Year" },
-        { key: "photo", label: "Photo (optional)", type: "image" },
         { key: "featured", label: "Featured", type: "toggle" },
-        { key: "isSample", label: "Sample entry (design preview)", type: "toggle" },
+        { key: "name", label: "Name" },
+        { key: "photo", label: "Photo", type: "image" },
+        { key: "exam", label: "Exam" },
+        { key: "achievement", label: "Achievement" },
+        { key: "extraField", label: "Extra field (optional)" },
         { key: "status", label: "Status", type: "select", options: STATUS_OPTIONS },
       ]}
     />
@@ -422,7 +409,7 @@ export function SettingsEditor() {
   );
 }
 
-export function MediaLibrary() {
+export function GalleryManager() {
   const { content, update } = useContent();
   const add = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -436,9 +423,9 @@ export function MediaLibrary() {
         })),
       );
       update((s) => ({ ...s, media: [...items, ...s.media] }));
-      toast.success(`${items.length} file(s) added`);
+      toast.success(`${items.length} photo(s) added to gallery`);
     } catch (err) {
-      console.error("Media upload failed:", err);
+      console.error("Gallery upload failed:", err);
       toast.error("Upload failed. Check Supabase Storage bucket/policies.");
     }
   };
@@ -446,9 +433,11 @@ export function MediaLibrary() {
     <div>
       <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-input bg-card py-10 text-sm hover:border-brand">
         <Upload className="h-6 w-6 text-brand" />
-        <span className="font-semibold">Upload images</span>
+        <span className="font-semibold">Upload gallery photos</span>
         <span className="text-xs text-muted-foreground">
-          {hasSupabaseEnv() ? "Uploaded to Supabase Storage" : "Stored in this browser only (demo)"}
+          {hasSupabaseEnv()
+            ? "Uploaded to Supabase Storage and shown in the public Gallery"
+            : "Stored in this browser only (demo)"}
         </span>
         <input
           type="file"

@@ -56,7 +56,7 @@ export function AlumniMarquee() {
       <ul className="flex w-max gap-4 px-5 pb-14">
         {loop.map((a, i) => (
           <li key={`${a.id}-${i}`} aria-hidden={i >= list.length} className="w-64 shrink-0">
-            <AchievementCard a={a} compact />
+            <AchievementCard a={a} />
           </li>
         ))}
       </ul>

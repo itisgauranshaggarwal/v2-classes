@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { siteUrl } from "@/lib/seo";
 
-const staticRoutes = ["/", "/about", "/alumni", "/contact"];
+const staticRoutes = ["/", "/about", "/alumni", "/gallery", "/contact"];
 
 function buildSitemap() {
   const lastmod = new Date().toISOString().slice(0, 10);

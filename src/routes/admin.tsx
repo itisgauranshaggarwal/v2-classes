@@ -82,7 +82,12 @@ const SECTIONS = [
     desc: "Address, phone, WhatsApp, email and map.",
   },
   { id: "social", label: "Social links", Icon: Share2, desc: "Links shown in the footer." },
-  { id: "media", label: "Media library", Icon: ImageIcon, desc: "Uploaded images." },
+  {
+    id: "gallery",
+    label: "Gallery media",
+    Icon: ImageIcon,
+    desc: "Manage photos shown in the public gallery.",
+  },
   { id: "enquiries", label: "Enquiries", Icon: Inbox, desc: "Messages from the contact form." },
   { id: "settings", label: "Settings", Icon: Cog, desc: "Site-wide settings." },
 ] as const;
@@ -328,7 +333,7 @@ function Admin() {
           {section === "walkthrough" && <S.WalkthroughEditor />}
           {section === "contact" && <S.ContactEditor />}
           {section === "social" && <S.SocialEditor />}
-          {section === "media" && <S.MediaLibrary />}
+          {section === "gallery" && <S.GalleryManager />}
           {section === "enquiries" && <S.EnquiryManager />}
           {section === "settings" && <S.SettingsEditor />}
         </div>
