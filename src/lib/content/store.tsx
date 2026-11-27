@@ -161,12 +161,21 @@ async function loadFromSupabase(): Promise<ContentState> {
   }
 
   return {
-    site: siteRes.data ? mapSite(siteRes.data as Row) : defaultContent.site,
-    faculty: ((facultyRes.data ?? []) as Row[]).map(mapFaculty),
-    achievements: ((achievementsRes.data ?? []) as Row[]).map(mapAchievement),
-    timeline: ((timelineRes.data ?? []) as Row[]).map(mapTimeline),
-    enquiries: ((enquiriesRes.data ?? []) as Row[]).map(mapEnquiry),
-    media: ((mediaRes.data ?? []) as Row[]).map(mapMedia),
+    site:
+      siteRes.error || !siteRes.data ? defaultContent.site : mapSite(siteRes.data as Row),
+    faculty: facultyRes.error
+      ? defaultContent.faculty
+      : ((facultyRes.data ?? []) as Row[]).map(mapFaculty),
+    achievements: achievementsRes.error
+      ? defaultContent.achievements
+      : ((achievementsRes.data ?? []) as Row[]).map(mapAchievement),
+    timeline: timelineRes.error
+      ? defaultContent.timeline
+      : ((timelineRes.data ?? []) as Row[]).map(mapTimeline),
+    enquiries: enquiriesRes.error
+      ? []
+      : ((enquiriesRes.data ?? []) as Row[]).map(mapEnquiry),
+    media: mediaRes.error ? defaultContent.media : ((mediaRes.data ?? []) as Row[]).map(mapMedia),
   };
 }
 
