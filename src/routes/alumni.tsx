@@ -7,23 +7,51 @@ import type { ExamCategory } from "@/lib/content/types";
 import { PageHero } from "@/components/site/PageHero";
 import { AchievementCard } from "@/components/site/AchievementCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  breadcrumbSchema,
+  canonicalLink,
+  jsonLd,
+  organizationSchema,
+  seoMeta,
+  siteUrl,
+  webPageSchema,
+} from "@/lib/seo";
+
+const title = "Alumni Achievements | V2 Classes Hisar";
+const description =
+  "Explore alumni achievements from V2 Classes in Hisar across JEE, NEET, board exams and other academic milestones.";
+
+const coursesSchema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: "Mathematics Coaching",
+    description: "Mathematics coaching and concept-building at V2 Classes in Hisar.",
+    provider: { "@id": `${siteUrl}/#organization` },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: "Science Coaching",
+    description: "Science coaching and academic guidance at V2 Classes in Hisar.",
+    provider: { "@id": `${siteUrl}/#organization` },
+  },
+];
 
 export const Route = createFileRoute("/alumni")({
   head: () => ({
-    meta: [
-      { title: "Alumni Achievements — V2 Classes, Hisar" },
-      {
-        name: "description",
-        content:
-          "The V2 Classes alumni archive: JEE, NEET, board and other achievements by our students.",
-      },
-      { property: "og:title", content: "V2 Classes Alumni Achievements" },
-      {
-        property: "og:description",
-        content: "JEE, NEET, board and other achievements by V2 Classes students.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+    meta: seoMeta({ title, description, path: "/alumni" }),
+    links: [canonicalLink("/alumni")],
+    scripts: [
+      jsonLd(organizationSchema),
+      jsonLd(webPageSchema({ name: title, description, path: "/alumni" })),
+      jsonLd(
+        breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Alumni", path: "/alumni" },
+        ]),
+      ),
+      ...coursesSchema.map(jsonLd),
     ],
   }),
   component: Alumni,

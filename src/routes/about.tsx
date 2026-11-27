@@ -5,23 +5,62 @@ import { Editable } from "@/components/site/Editable";
 import { PageHero } from "@/components/site/PageHero";
 import hall from "@/assets/classroom_hall.jpg.asset.json";
 import board from "@/assets/classroom_board.jpg.asset.json";
+import {
+  absoluteUrl,
+  breadcrumbSchema,
+  canonicalLink,
+  jsonLd,
+  organizationSchema,
+  seoMeta,
+  siteUrl,
+  webPageSchema,
+} from "@/lib/seo";
+
+const title = "About V2 Classes Hisar | Faculty & Institute Story";
+const description =
+  "Learn about V2 Classes, a coaching institute in Sector 13, Hisar founded in 2000. Meet Varun Sir and the faculty guiding students in mathematics and science.";
+
+const facultySchema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: "Varun Sir",
+    jobTitle: "Founder & Mathematics Educator",
+    description: "Founder of V2 Classes. Teaches mathematics and guides students academically.",
+    worksFor: { "@id": `${siteUrl}/#organization` },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: "Sunny Sir",
+    jobTitle: "Academic Systems",
+    description: "Prepares test papers and runs evaluation and the institute's academic systems.",
+    worksFor: { "@id": `${siteUrl}/#organization` },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: "Vikas Sir",
+    jobTitle: "Student Affairs",
+    description: "Looks after discipline, invigilation and day-to-day student assistance.",
+    worksFor: { "@id": `${siteUrl}/#organization` },
+  },
+];
 
 export const Route = createFileRoute("/about")({
   head: () => ({
-    meta: [
-      { title: "About Us — V2 Classes, Hisar" },
-      {
-        name: "description",
-        content:
-          "The story of V2 Classes, founded in 2000 in Sector 13, Hisar: Varun Sir, the faculty and how the institute grew.",
-      },
-      { property: "og:title", content: "About V2 Classes" },
-      {
-        property: "og:description",
-        content: "Founded in 2000 in Sector 13, Hisar. The story of the institute and its faculty.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+    meta: seoMeta({ title, description, path: "/about", image: absoluteUrl(hall.url) }),
+    links: [canonicalLink("/about")],
+    scripts: [
+      jsonLd(organizationSchema),
+      jsonLd(webPageSchema({ name: title, description, path: "/about" })),
+      jsonLd(
+        breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "About", path: "/about" },
+        ]),
+      ),
+      ...facultySchema.map(jsonLd),
     ],
   }),
   component: About,

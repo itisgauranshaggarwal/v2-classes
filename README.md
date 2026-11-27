@@ -81,6 +81,7 @@ Set values in `.env`:
 ```env
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-anon-key
+VITE_SITE_URL=https://your-production-domain.com
 ```
 
 Get these from **Supabase Dashboard > Project Settings > API**.
@@ -155,6 +156,7 @@ This project is **SSR**, not a static SPA. Deploy it using a TanStack Start-comp
 3. Set environment variables in your hosting provider:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
+   - `VITE_SITE_URL` (your real production domain, used for canonical/OG/sitemap URLs)
 4. Ensure Supabase migrations are applied and admin user is configured.
 
 ### Deploy checklist

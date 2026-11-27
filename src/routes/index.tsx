@@ -5,23 +5,31 @@ import { Editable } from "@/components/site/Editable";
 import { AlumniMarquee } from "@/components/site/AlumniMarquee";
 import { FacultyCard } from "@/components/site/FacultyCard";
 import { Walkthrough } from "@/components/site/Walkthrough";
+import {
+  absoluteUrl,
+  breadcrumbSchema,
+  canonicalLink,
+  defaultOgImage,
+  jsonLd,
+  organizationSchema,
+  seoMeta,
+  webPageSchema,
+  websiteSchema,
+} from "@/lib/seo";
+
+const title = "V2 Classes Hisar | Maths & Science Coaching Institute";
+const description =
+  "V2 Classes is a coaching institute in Sector 13, Hisar, Haryana, guiding students in mathematics and science since 2000. Learn with Varun Sir and the V2 faculty.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
-    meta: [
-      { title: "V2 Classes, Hisar — Building Concepts. Shaping Futures." },
-      {
-        name: "description",
-        content:
-          "V2 Classes in Sector 13, Hisar has guided students in mathematics and science since 2000. Meet Varun Sir and the faculty.",
-      },
-      { property: "og:title", content: "V2 Classes, Hisar — Building Concepts. Shaping Futures." },
-      {
-        property: "og:description",
-        content: "An educational institute in Sector 13, Hisar, guiding students since 2000.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+    meta: seoMeta({ title, description, path: "/", image: defaultOgImage }),
+    links: [canonicalLink("/")],
+    scripts: [
+      jsonLd(organizationSchema),
+      jsonLd(websiteSchema),
+      jsonLd(webPageSchema({ name: title, description, path: "/" })),
+      jsonLd(breadcrumbSchema([{ name: "Home", path: "/" }])),
     ],
   }),
   component: Home,

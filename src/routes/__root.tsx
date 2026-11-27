@@ -76,18 +76,19 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
-    // Replace these placeholders with the app's name and description when first building the app.
-    // Each content route, / included, must still set its own head(). Never add og:image or
-    // twitter:image here: every page without its own would inherit the root's preview image.
+    // Each content route must set its own title/description/canonical/OG image.
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "V2 Classes — Sector 13, Hisar" },
+      { title: "V2 Classes — Coaching Institute in Hisar" },
       {
         name: "description",
-        content: "V2 Classes, an educational institute in Sector 13, Hisar, Haryana since 2000.",
+        content:
+          "V2 Classes is an educational institute in Sector 13, Hisar, Haryana, guiding students in mathematics and science since 2000.",
       },
       { name: "author", content: "V2 Classes" },
+      { property: "og:site_name", content: "V2 Classes" },
+      { property: "og:locale", content: "en_IN" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

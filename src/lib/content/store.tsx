@@ -161,8 +161,7 @@ async function loadFromSupabase(): Promise<ContentState> {
   }
 
   return {
-    site:
-      siteRes.error || !siteRes.data ? defaultContent.site : mapSite(siteRes.data as Row),
+    site: siteRes.error || !siteRes.data ? defaultContent.site : mapSite(siteRes.data as Row),
     faculty: facultyRes.error
       ? defaultContent.faculty
       : ((facultyRes.data ?? []) as Row[]).map(mapFaculty),
@@ -172,9 +171,7 @@ async function loadFromSupabase(): Promise<ContentState> {
     timeline: timelineRes.error
       ? defaultContent.timeline
       : ((timelineRes.data ?? []) as Row[]).map(mapTimeline),
-    enquiries: enquiriesRes.error
-      ? []
-      : ((enquiriesRes.data ?? []) as Row[]).map(mapEnquiry),
+    enquiries: enquiriesRes.error ? [] : ((enquiriesRes.data ?? []) as Row[]).map(mapEnquiry),
     media: mediaRes.error ? defaultContent.media : ((mediaRes.data ?? []) as Row[]).map(mapMedia),
   };
 }

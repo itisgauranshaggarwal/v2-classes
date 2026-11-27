@@ -6,23 +6,77 @@ import { useContent, uid } from "@/lib/content/store";
 import { enquirySchema, submitEnquiry, type EnquiryInput } from "@/lib/enquiries";
 import { PageHero } from "@/components/site/PageHero";
 import { Editable } from "@/components/site/Editable";
+import {
+  absoluteUrl,
+  breadcrumbSchema,
+  canonicalLink,
+  contactInfo,
+  jsonLd,
+  organizationSchema,
+  seoMeta,
+  siteUrl,
+  webPageSchema,
+} from "@/lib/seo";
+
+const title = "Contact V2 Classes Hisar | Address, Phone & Enquiry";
+const description =
+  "Contact V2 Classes in Sector 13, Hisar. Call, WhatsApp, visit the institute, or send an enquiry for maths and science coaching.";
+
+const contactSchema = {
+  "@context": "https://schema.org",
+  "@type": "ContactPage",
+  "@id": `${absoluteUrl("/contact")}#contactpage`,
+  url: absoluteUrl("/contact"),
+  name: title,
+  description,
+  about: { "@id": `${siteUrl}/#organization` },
+  mainEntity: {
+    "@type": "EducationalOrganization",
+    "@id": `${siteUrl}/#organization`,
+    name: "V2 Classes",
+    telephone: contactInfo.phone,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "50, Shopping Complex, MDR108",
+      addressLocality: "Hisar",
+      addressRegion: contactInfo.region,
+      postalCode: contactInfo.postalCode,
+      addressCountry: contactInfo.country,
+    },
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        telephone: contactInfo.phone,
+        contactType: "admissions",
+        areaServed: "IN",
+        availableLanguage: ["en", "hi"],
+      },
+      {
+        "@type": "ContactPoint",
+        telephone: `+${contactInfo.whatsapp}`,
+        contactType: "customer support",
+        contactOption: "HearingImpairedSupported",
+        areaServed: "IN",
+        availableLanguage: ["en", "hi"],
+      },
+    ],
+  },
+};
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
-    meta: [
-      { title: "Contact Us — V2 Classes, Sector 13, Hisar" },
-      {
-        name: "description",
-        content:
-          "Visit, call or WhatsApp V2 Classes in Sector 13, Hisar, or send an enquiry online.",
-      },
-      { property: "og:title", content: "Contact V2 Classes" },
-      {
-        property: "og:description",
-        content: "Address, phone, WhatsApp and enquiry form for V2 Classes, Hisar.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+    meta: seoMeta({ title, description, path: "/contact" }),
+    links: [canonicalLink("/contact")],
+    scripts: [
+      jsonLd(organizationSchema),
+      jsonLd(contactSchema),
+      jsonLd(webPageSchema({ name: title, description, path: "/contact" })),
+      jsonLd(
+        breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Contact", path: "/contact" },
+        ]),
+      ),
     ],
   }),
   component: Contact,
